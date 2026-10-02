@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ScholarForge — Web Prototype</title>
+  <style>
+    /* ═══════════════════════════════════════════════════
+       DESIGN TOKENS  design-system.md §1–3
+    ═══════════════════════════════════════════════════ */
+    :root {
+      --color-primary:        #2563EB;
+      --color-primary-hover:  #1D4ED8;
+      --color-primary-light:  #EFF6FF;
+      --color-bg:             #F8FAFC;
+      --color-surface:        #FFFFFF;
+      --color-sidebar:        #0F172A;
+      --color-sidebar-hover:  #1E293B;
+      --color-sidebar-active: #1E3A8A;
+      --color-border:         #E2E8F0;
+      --color-border-focus:   #2563EB;
+      --color-text-primary:   #0F172A;
+      --color-text-secondary: #475569;
+      --color-text-muted:     #94A3B8;
+      --color-text-inverse:   #F8FAFC;
+      --color-success:        #16A34A;
+      --color-success-bg:     #F0FDF4;
+      --color-warning:        #D97706;
+      --color-warning-bg:     #FFFBEB;
+      --color-error:          #DC2626;
+      --color-error-bg:       #FEF2F2;
+      --color-tag-bg:         #F1F5F9;
+      --color-tag-text:       #475569;
+      --color-tag-border:     #CBD5E1;
+      --color-highlight:      #F59E0B;
+
+      --font-family:   'Inter', system-ui, -apple-system, sans-serif;
+      --text-xs:       0.75rem;
+      --text-sm:       0.875rem;
+      --text-base:     1rem;
+      --text-lg:       1.125rem;
+      --text-xl:       1.25rem;
+      --text-2xl:      1.5rem;
+      --font-normal:   400;
+      --font-medium:   500;
+      --font-semibold: 600;
+      --font-bold:     700;
+      --leading-snug:    1.375;
+      --leading-normal:  1.5;
+      --leading-relaxed: 1.625;
+
+      --sp-1:  0.25rem;
+      --sp-2:  0.5rem;
+      --sp-3:  0.75rem;
+      --sp-4:  1rem;
+      --sp-5:  1.25rem;
+      --sp-6:  1.5rem;
+      --sp-8:  2rem;
+      --sp-10: 2.5rem;
+      --sp-12: 3rem;
+
+      --radius-sm:   0.25rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-full: 9999px;
+
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+
+      --sidebar-width:     240px;
+      --right-panel-width: 340px;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       BASE
+    ═══════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    button { font-family: inherit; cursor: pointer; }
+    a { text-decoration: none; color: inherit; }
+
+    body {
+      font-family: var(--font-family);
+      font-size: var(--text-sm);
+      line-height: var(--leading-normal);
+      color: var(--color-text-primary);
+      background: var(--color-bg);
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       SIDEBAR  design-system.md §5.1
+    ═══════════════════════════════════════════════════ */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--color-sidebar);
+      color: var(--color-text-inverse);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      height: 100vh;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-5) var(--sp-4) var(--sp-4);
+      border-bottom: 1px solid #1E293B;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--color-primary);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: var(--font-bold);
+      letter-spacing: -0.5px;
+      color: white;
+      flex-shrink: 0;
+    }
+    .logo-text { line-height: 1.2; }
+    .logo-name {
+      font-size: var(--text-sm);
+      font-weight: var(--font-bold);
+      color: var(--color-text-inverse);
+    }
+    .logo-tagline {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-weight: var(--font-normal);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: var(--sp-3) var(--sp-2);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    /* Nav item — design-system.md §5.1 */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-3);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: #94A3B8;
+      border-radius: var(--radius-md);
+      transition: background 120ms, color 120ms;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-item:hover {
+      background: var(--color-sidebar-hover);
+      color: var(--color-text-inverse);
+    }
+    .nav-item.active {
+      background: var(--color-sidebar-active);
+      color: var(--color-text-inverse);
+    }
+    .nav-item svg {
+      width: 17px; height: 17px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: var(--font-semibold);
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: var(--sp-4) var(--sp-3) var(--sp-2);
+    }
+
+    /* Active project badge */
+    .project-badge {
+      margin: var(--sp-3) var(--sp-3) 0;
+      padding: var(--sp-3);
+      background: var(--color-sidebar-hover);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+    }
+    .project-badge-label {
+      color: #64748B;
+      margin-bottom: 3px;
+    }
+    .project-badge-name {
+      font-weight: var(--font-semibold);
+      color: var(--color-text-inverse);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* User row */
+    .sidebar-user {
+      padding: var(--sp-4);
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      border-top: 1px solid #1E293B;
+    }
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      flex-shrink: 0;
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-name {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--color-text-inverse);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .user-email {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PAGE BODY — wraps main + right panel
+    ═══════════════════════════════════════════════════ */
+    .page-body {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       SCREENS
+    ═══════════════════════════════════════════════════ */
+    .screen { display: none; flex: 1; min-width: 0; }
+    .screen.active { display: flex; flex-direction: column; }
+    .right-panel-slot { display: none; }
+    .right-panel-slot.active { display: flex; flex-direction: column; }
+
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: var(--sp-6) var(--sp-8);
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       RIGHT PANEL  design-system.md §5.11
+    ═══════════════════════════════════════════════════ */
+    .right-panel {
+      width: var(--right-panel-width);
+      flex-shrink: 0;
+      border-left: 1px solid var(--color-border);
+      background: var(--color-surface);
+      height: 100vh;
+      overflow-y: auto;
+      position: sticky;
+      top: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-1);
+      padding: var(--sp-4) var(--sp-5);
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      background: var(--color-surface);
+      z-index: 5;
+    }
+    .panel-tab {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-3);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--color-text-muted);
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: color 120ms;
+    }
+    .panel-tab.active {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+    }
+    .panel-tab svg {
+      width: 15px; height: 15px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .panel-body {
+      padding: var(--sp-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-5);
+    }
+    .panel-step {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+    .panel-step-label {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--color-text-primary);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PAGE HEADER
+    ═══════════════════════════════════════════════════ */
+    .page-header {
+      margin-bottom: var(--sp-5);
+    }
+    .page-title {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-bold);
+      color: var(--color-text-primary);
+      margin-bottom: 3px;
+    }
+    .page-subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       BUTTONS  design-system.md §5.5
+    ═══════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      line-height: 1;
+      border: 1px solid transparent;
+      transition: background 120ms, color 120ms, border-color 120ms;
+      white-space: nowrap;
+    }
+    .btn svg {
+      width: 14px; height: 14px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .btn-primary { background: var(--color-primary); color: white; }
+    .btn-primary:hover { background: var(--color-primary-hover); }
+    .btn-primary-full {
+      width: 100%;
+      justify-content: center;
+      padding: var(--sp-3) var(--sp-4);
+      font-size: var(--text-sm);
+    }
+    .btn-secondary {
+      background: var(--color-surface);
+      color: var(--color-text-primary);
+      border-color: var(--color-border);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-secondary:hover { background: var(--color-bg); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-text-secondary);
+      padding: var(--sp-2) var(--sp-3);
+      border: none;
+    }
+    .btn-ghost:hover { background: var(--color-bg); color: var(--color-text-primary); }
+    .btn-sm { padding: 5px var(--sp-3); font-size: var(--text-xs); }
+    .btn-saved {
+      background: var(--color-success-bg);
+      color: var(--color-success);
+      border-color: #BBF7D0;
+    }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* ═══════════════════════════════════════════════════
+       SEARCH BAR  design-system.md §5.4
+    ═══════════════════════════════════════════════════ */
+    .search-bar {
+      display: flex;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-4);
+    }
+    .search-input-wrap {
+      flex: 1;
+      position: relative;
+      max-width: 680px;
+    }
+    .search-input-wrap .icon-search {
+      position: absolute;
+      left: var(--sp-3); top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px;
+      stroke: var(--color-text-muted); fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px var(--sp-4) 10px calc(var(--sp-3)*2 + 15px);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      font-size: var(--text-sm);
+      font-family: inherit;
+      color: var(--color-text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .search-input:focus {
+      outline: none;
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+    }
+    .search-input::placeholder { color: var(--color-text-muted); }
+
+    /* ═══════════════════════════════════════════════════
+       FILTER ROW
+    ═══════════════════════════════════════════════════ */
+    .filter-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-5);
+      flex-wrap: wrap;
+    }
+    .filter-select {
+      padding: 6px var(--sp-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      font-weight: var(--font-medium);
+      background: var(--color-surface);
+      color: var(--color-text-secondary);
+      font-family: inherit;
+      box-shadow: var(--shadow-sm);
+    }
+    .filter-divider {
+      width: 1px; height: 20px;
+      background: var(--color-border);
+      margin: 0 var(--sp-1);
+    }
+    .result-count {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--sp-4);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       TAG CHIP  design-system.md §5.6
+    ═══════════════════════════════════════════════════ */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px var(--sp-3);
+      background: var(--color-tag-bg);
+      color: var(--color-tag-text);
+      border: 1px solid var(--color-tag-border);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      font-weight: var(--font-medium);
+      white-space: nowrap;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PAPER CARD  design-system.md §5.7
+    ═══════════════════════════════════════════════════ */
+    .paper-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5) var(--sp-6);
+      margin-bottom: var(--sp-3);
+      display: grid;
+      grid-template-columns: 1fr 80px;
+      gap: var(--sp-4);
+      box-shadow: var(--shadow-sm);
+      transition: box-shadow 120ms;
+    }
+    .paper-card:hover { box-shadow: var(--shadow-md); }
+    .paper-card.is-saved {
+      border-color: #BBF7D0;
+      background: #F0FDF4;
+    }
+    .paper-card-left { min-width: 0; }
+    .paper-card-thumb {
+      width: 80px; height: 80px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      align-self: start;
+      overflow: hidden;
+    }
+    .paper-card-thumb svg {
+      width: 28px; height: 28px;
+      stroke: var(--color-text-muted); fill: none;
+      stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .paper-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      color: var(--color-highlight);
+      margin-bottom: var(--sp-2);
+    }
+    .paper-badge svg {
+      width: 12px; height: 12px;
+      fill: var(--color-highlight); stroke: none;
+    }
+    .paper-title {
+      font-size: var(--text-lg);
+      font-weight: var(--font-semibold);
+      color: var(--color-text-primary);
+      line-height: var(--leading-snug);
+      margin-bottom: 4px;
+    }
+    .paper-meta {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-bottom: var(--sp-3);
+    }
+    .paper-abstract {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: var(--leading-relaxed);
+      margin-bottom: var(--sp-3);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .paper-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-4);
+    }
+    .paper-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-1);
+      padding-top: var(--sp-3);
+      border-top: 1px solid var(--color-border);
+    }
+    .paper-actions .ml-auto { margin-left: auto; }
+
+    /* ═══════════════════════════════════════════════════
+       FORM INPUTS  design-system.md §5.10
+    ═══════════════════════════════════════════════════ */
+    .form-group { display: flex; flex-direction: column; gap: var(--sp-1); }
+    .form-label {
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: var(--sp-2) var(--sp-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-family: inherit;
+      color: var(--color-text-primary);
+      background: var(--color-surface);
+      box-shadow: var(--shadow-sm);
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--color-border-focus);
+      box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--color-text-muted); }
+    .form-textarea {
+      resize: vertical;
+      min-height: 88px;
+      line-height: var(--leading-relaxed);
+    }
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' fill='%2394A3B8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: var(--sp-8);
+    }
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-3);
+    }
+    .search-field {
+      position: relative;
+    }
+    .search-field svg {
+      position: absolute;
+      left: var(--sp-3); top: 50%; transform: translateY(-50%);
+      width: 13px; height: 13px;
+      stroke: var(--color-text-muted); fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      pointer-events: none;
+    }
+    .search-field input {
+      padding-left: calc(var(--sp-3)*2 + 13px);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       STYLE SWITCHER ROW
+    ═══════════════════════════════════════════════════ */
+    .style-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--sp-3) var(--sp-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--sp-4);
+      box-shadow: var(--shadow-sm);
+    }
+    .style-row-left {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+    }
+    .style-row label {
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      color: var(--color-text-secondary);
+    }
+    .style-row .form-select {
+      box-shadow: none;
+      padding: 5px var(--sp-8) 5px var(--sp-3);
+      font-size: var(--text-sm);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       LIBRARY ITEM  design-system.md §5.8
+    ═══════════════════════════════════════════════════ */
+    .library-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-4) var(--sp-5);
+      margin-bottom: var(--sp-3);
+      display: flex;
+      gap: var(--sp-4);
+      transition: opacity 200ms;
+    }
+    .library-item-num {
+      width: 24px; height: 24px;
+      background: var(--color-primary);
+      color: white;
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: var(--font-bold);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .library-item-body { flex: 1; min-width: 0; }
+    .citation-text {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: var(--leading-relaxed);
+      font-family: 'Georgia', serif;
+      margin-bottom: var(--sp-3);
+    }
+    .library-item-actions {
+      display: flex;
+      gap: var(--sp-2);
+      align-items: center;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       ALERT  design-system.md §5.12
+    ═══════════════════════════════════════════════════ */
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      padding: var(--sp-3) var(--sp-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      line-height: var(--leading-normal);
+      margin-bottom: var(--sp-5);
+    }
+    .alert svg {
+      width: 16px; height: 16px;
+      flex-shrink: 0; margin-top: 1px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .alert-warning { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid #FDE68A; }
+
+    /* ═══════════════════════════════════════════════════
+       OUTLINE SECTION  design-system.md §5.9
+    ═══════════════════════════════════════════════════ */
+    .outline-actions-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      margin-bottom: var(--sp-5);
+      flex-wrap: wrap;
+    }
+    .outline-meta {
+      margin-left: auto;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    .outline-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--sp-3);
+      overflow: hidden;
+    }
+    .outline-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--sp-3) var(--sp-5);
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-bg);
+    }
+    .outline-section-title {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      color: var(--color-text-primary);
+    }
+    .outline-section-actions { display: flex; gap: 2px; }
+    .outline-section-body { padding: var(--sp-5); }
+    .outline-section-body ul {
+      padding-left: var(--sp-5);
+      color: var(--color-text-secondary);
+      font-size: var(--text-sm);
+      line-height: var(--leading-relaxed);
+      margin-bottom: var(--sp-4);
+    }
+    .outline-section-body li { margin-bottom: var(--sp-2); }
+    .draft-passage {
+      background: var(--color-bg);
+      border-left: 3px solid var(--color-primary);
+      padding: var(--sp-3) var(--sp-4);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+    .draft-label {
+      font-size: 10px;
+      font-weight: var(--font-semibold);
+      color: var(--color-warning);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--sp-2);
+    }
+    .draft-passage p {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: var(--leading-relaxed);
+    }
+    .references-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-5);
+      margin-bottom: var(--sp-3);
+    }
+    .references-title {
+      font-size: var(--text-sm);
+      font-weight: var(--font-semibold);
+      margin-bottom: var(--sp-3);
+      color: var(--color-text-primary);
+    }
+    .reference-item {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: var(--leading-relaxed);
+      padding: var(--sp-2) 0;
+      border-bottom: 1px solid var(--color-border);
+      font-family: 'Georgia', serif;
+    }
+    .reference-item:last-child { border-bottom: none; }
+
+    /* ═══════════════════════════════════════════════════
+       RIGHT PANEL — RECENT ITEMS  design-system.md §5.15
+    ═══════════════════════════════════════════════════ */
+    .recent-section-label {
+      font-size: var(--text-xs);
+      font-weight: var(--font-semibold);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: var(--sp-3);
+    }
+    .recent-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-3);
+      padding: var(--sp-3) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .recent-item:last-child { border-bottom: none; }
+    .recent-item-icon {
+      width: 30px; height: 30px;
+      background: var(--color-primary-light);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .recent-item-icon svg {
+      width: 14px; height: 14px;
+      stroke: var(--color-primary); fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .recent-item-body { flex: 1; min-width: 0; }
+    .recent-item-title {
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 2px;
+    }
+    .recent-item-meta { font-size: var(--text-xs); color: var(--color-text-muted); }
+    .recent-item-menu { color: var(--color-text-muted); cursor: pointer; }
+    .recent-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--sp-3);
+    }
+    .view-all { font-size: var(--text-xs); color: var(--color-primary); font-weight: var(--font-medium); }
+
+    /* Ask a question row */
+    .ask-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-bg);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-bottom: var(--sp-2);
+    }
+    .ask-row svg {
+      width: 13px; height: 13px;
+      stroke: var(--color-primary); fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       DIVIDER, EMPTY STATE
+    ═══════════════════════════════════════════════════ */
+    .divider { height: 1px; background: var(--color-border); margin: var(--sp-5) 0; }
+
+    .empty-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: var(--sp-12) var(--sp-6);
+      gap: var(--sp-3);
+    }
+    .empty-state.visible { display: flex; }
+    .empty-state svg {
+      width: 40px; height: 40px;
+      stroke: var(--color-text-muted); fill: none;
+      stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .empty-state-title { font-size: var(--text-lg); font-weight: var(--font-semibold); }
+    .empty-state-body { font-size: var(--text-sm); color: var(--color-text-muted); max-width: 320px; }
+
+    /* ═══════════════════════════════════════════════════
+       MODAL  design-system.md §5.17
+    ═══════════════════════════════════════════════════ */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgb(0 0 0 / 0.45);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 420px;
+      padding: var(--sp-6);
+    }
+    .modal-title { font-size: var(--text-xl); font-weight: var(--font-semibold); margin-bottom: var(--sp-2); }
+    .modal-body { font-size: var(--text-sm); color: var(--color-text-secondary); line-height: var(--leading-relaxed); margin-bottom: var(--sp-5); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: var(--sp-3); }
+
+    /* ═══════════════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      bottom: var(--sp-6);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1E293B;
+      color: white;
+      padding: var(--sp-3) var(--sp-5);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: var(--font-medium);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      opacity: 0;
+      transition: opacity 160ms;
+      pointer-events: none;
+      box-shadow: var(--shadow-lg);
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+    .toast svg {
+      width: 14px; height: 14px;
+      stroke: #4ADE80; fill: none;
+      stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       SPINNER
+    ═══════════════════════════════════════════════════ */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      flex-shrink: 0;
+    }
+    .regen-placeholder {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding: var(--sp-5);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       OUTLINE RIGHT PANEL extras
+    ═══════════════════════════════════════════════════ */
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--sp-3) 0;
+      border-bottom: 1px solid var(--color-border);
+      font-size: var(--text-sm);
+    }
+    .meta-row:last-child { border-bottom: none; }
+    .meta-key { color: var(--color-text-muted); }
+    .meta-val { font-weight: var(--font-medium); color: var(--color-text-primary); }
+    .section-nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-2) var(--sp-3);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: background 100ms;
+    }
+    .section-nav-item:hover { background: var(--color-bg); color: var(--color-primary); }
+    .section-nav-item svg {
+      width: 12px; height: 12px;
+      stroke: currentColor; fill: none;
+      stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     SIDEBAR  design-system.md §5.1
+════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">SF</div>
+    <div class="logo-text">
+      <div class="logo-name">ScholarForge</div>
+      <div class="logo-tagline">Find. Organise. Outline.</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <button class="nav-item active" id="nav-search" onclick="switchScreen('search')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search Papers
+    </button>
+    <button class="nav-item" id="nav-library" onclick="switchScreen('library')">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      My Library
+    </button>
+    <button class="nav-item" id="nav-outline" onclick="switchScreen('outline')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Generate Outline
+    </button>
+
+    <div class="sidebar-section-label">Workspace</div>
+
+    <button class="nav-item" onclick="showToast('Projects screen — not in this prototype')">
+      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Projects
+    </button>
+    <button class="nav-item" onclick="showToast('Saved Searches — not in this prototype')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+      Saved Searches
+    </button>
+    <button class="nav-item" onclick="showToast('Settings — not in this prototype')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- Active project badge -->
+  <div class="project-badge">
+    <div class="project-badge-label">Active project</div>
+    <div class="project-badge-name">Thesis: Remote Work Trust</div>
+  </div>
+
+  <!-- User row -->
+  <div class="sidebar-user">
+    <div class="avatar">NH</div>
+    <div class="user-info">
+      <div class="user-name">Nay Lin Htet</div>
+      <div class="user-email">naeyar347@gmail.com</div>
+    </div>
+  </div>
+</aside>
+
+
+<!-- ════════════════════════════════════════════════════
+     PAGE BODY
+════════════════════════════════════════════════════ -->
+<div class="page-body" id="page-body">
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 1 — SEARCH PAPERS
+  ══════════════════════════════════════════════════ -->
+  <main id="screen-search" class="screen main-content active">
+
+    <div class="page-header">
+      <div class="page-title">Search Papers</div>
+      <div class="page-subtitle">Describe a research idea — results are ranked by semantic similarity, not just keyword overlap</div>
+    </div>
+
+    <!-- Search bar -->
+    <form class="search-bar" onsubmit="handleSearch(event)">
+      <div class="search-input-wrap">
+        <svg class="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="search-input" id="search-input" type="text"
+               placeholder="Describe your research idea in plain language…"
+               value="how remote work affects team trust over time">
+      </div>
+      <button class="btn btn-primary" type="submit">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </button>
+      <button class="btn btn-secondary" type="button" onclick="showToast('Filters panel — not in this prototype')">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        Filters
+      </button>
+    </form>
+
+    <!-- Filter chips -->
+    <div class="filter-row">
+      <select class="filter-select"><option>Year: Any</option><option>2020–2024</option><option>2015–2019</option><option>Before 2015</option></select>
+      <select class="filter-select"><option>Type: All</option><option>Journal article</option><option>Conference paper</option><option>Preprint</option></select>
+      <select class="filter-select"><option>Relevance</option><option>Year (newest)</option><option>Citations (most)</option></select>
+      <div class="filter-divider"></div>
+      <span class="tag">Open access only</span>
+    </div>
+
+    <p class="result-count">Showing 3 results for <strong>"how remote work affects team trust over time"</strong></p>
+
+    <!-- ── Paper 1 (pre-saved) ── -->
+    <div class="paper-card is-saved" id="card-1">
+      <div class="paper-card-left">
+        <div class="paper-badge">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Highly cited
+        </div>
+        <div class="paper-title">Trust in Virtual Teams: How Remote Work Changes Team Dynamics</div>
+        <div class="paper-meta">Leonardi, P., Neeley, T. &nbsp;·&nbsp; 2022 &nbsp;·&nbsp; Journal of Applied Psychology</div>
+        <div class="paper-abstract">This paper investigates how trust forms and erodes in fully remote teams over a 12-month longitudinal study across 24 organisations. We identify three critical phases of trust development unique to remote contexts and propose a dynamic trust model that accounts for asynchronous communication patterns and reduced social cues in distributed workplaces.</div>
+        <div class="paper-tags">
+          <span class="tag">remote work</span>
+          <span class="tag">team trust</span>
+          <span class="tag">virtual teams</span>
+          <span class="tag">longitudinal</span>
+        </div>
+        <div class="paper-actions">
+          <button class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF
+          </button>
+          <button class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Cited by 342
+          </button>
+          <div class="ml-auto">
+            <button class="btn btn-saved btn-sm" disabled>
+              <svg viewBox="0 0 24 24" style="stroke:var(--color-success)"><polyline points="20 6 9 17 4 12"/></svg>
+              Saved to library
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="paper-card-thumb">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+    </div>
+
+    <!-- ── Paper 2 ── -->
+    <div class="paper-card" id="card-2">
+      <div class="paper-card-left">
+        <div class="paper-title">Psychological Safety and Remote Collaboration: A Meta-Analysis</div>
+        <div class="paper-meta">Newman, A., Donohue, R., Eva, N. &nbsp;·&nbsp; 2021 &nbsp;·&nbsp; Journal of Organizational Behavior</div>
+        <div class="paper-abstract">Meta-analysis of 67 studies (N = 18,402) examining the relationship between psychological safety and team performance in remote and hybrid settings. Results indicate that psychological safety mediates the negative effects of geographic dispersion on team trust and collaborative innovation outcomes.</div>
+        <div class="paper-tags">
+          <span class="tag">psychological safety</span>
+          <span class="tag">meta-analysis</span>
+          <span class="tag">remote collaboration</span>
+        </div>
+        <div class="paper-actions">
+          <button class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF
+          </button>
+          <button class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Cited by 197
+          </button>
+          <div class="ml-auto">
+            <button class="btn btn-primary btn-sm" id="save-btn-2" onclick="savePaper(2)">
+              <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              Save to library
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="paper-card-thumb">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+    </div>
+
+    <!-- ── Paper 3 ── -->
+    <div class="paper-card" id="card-3">
+      <div class="paper-card-left">
+        <div class="paper-title">Asynchronous Communication and the Erosion of Interpersonal Trust in Distributed Teams</div>
+        <div class="paper-meta">Golden, T. D., Veiga, J. F. &nbsp;·&nbsp; 2023 &nbsp;·&nbsp; MIS Quarterly</div>
+        <div class="paper-abstract">A grounded theory study of 38 distributed software teams reveals how the shift from synchronous to asynchronous communication correlates with declining interpersonal trust scores over a 6-month period, and proposes five evidence-based mitigation strategies for remote team managers.</div>
+        <div class="paper-tags">
+          <span class="tag">async communication</span>
+          <span class="tag">distributed teams</span>
+          <span class="tag">trust erosion</span>
+          <span class="tag">grounded theory</span>
+        </div>
+        <div class="paper-actions">
+          <button class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF
+          </button>
+          <button class="btn btn-ghost btn-sm">
+            <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Cited by 89
+          </button>
+          <div class="ml-auto">
+            <button class="btn btn-primary btn-sm" id="save-btn-3" onclick="savePaper(3)">
+              <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              Save to library
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="paper-card-thumb">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Right panel — Search screen  design-system.md §7.1 -->
+  <div id="panel-search" class="right-panel-slot active">
+    <aside class="right-panel">
+      <div class="panel-header">
+        <button class="panel-tab active">
+          <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Generate Outline
+        </button>
+        <button class="panel-tab" onclick="showToast('Saved Outlines — switch to Outline screen')">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Saved Outlines
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div class="panel-step">
+          <div class="panel-step-label">1. Describe your idea</div>
+          <div class="form-group">
+            <textarea class="form-textarea" placeholder="e.g. Write a research outline on how remote work affects interpersonal trust in distributed software teams. Include related work, methodology, and expected contributions."></textarea>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="align-self:flex-start; color:var(--color-primary)">
+            <svg viewBox="0 0 24 24" style="stroke:var(--color-primary)"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 8v4l3 3"/></svg>
+            Try an example
+          </button>
+        </div>
+
+        <div class="panel-step">
+          <div class="panel-step-label">2. Choose settings</div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label class="form-label">Citation style</label>
+              <select class="form-select"><option>IEEE (default)</option><option>APA</option><option>MLA</option><option>Chicago</option></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Structure</label>
+              <select class="form-select"><option>IEEE paper</option><option>ACM paper</option><option>Thesis</option></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-step">
+          <div class="panel-step-label">3. Add references <span style="font-weight:400;color:var(--color-text-muted)">(optional)</span></div>
+          <div class="search-field form-group">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="form-input" placeholder="Search papers or topics to include…" style="padding-left:2rem">
+          </div>
+          <button class="btn btn-ghost btn-sm" style="align-self:flex-start; color:var(--color-text-secondary)">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add reference manually
+          </button>
+        </div>
+
+        <button class="btn btn-primary btn-primary-full" onclick="switchScreen('outline')">
+          <svg viewBox="0 0 24 24" style="stroke:white"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Generate Outline
+        </button>
+
+        <div>
+          <div class="recent-header">
+            <div class="recent-section-label">Recent outlines</div>
+            <span class="view-all" onclick="switchScreen('outline')" style="cursor:pointer">View all</span>
+          </div>
+          <div class="recent-item">
+            <div class="recent-item-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="recent-item-body">
+              <div class="recent-item-title">Thesis: Remote Work Trust</div>
+              <div class="recent-item-meta">4 papers · 2 hours ago</div>
+            </div>
+            <div class="recent-item-menu">···</div>
+          </div>
+          <div class="recent-item">
+            <div class="recent-item-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="recent-item-body">
+              <div class="recent-item-title">AI Ethics in Healthcare</div>
+              <div class="recent-item-meta">6 papers · 3 days ago</div>
+            </div>
+            <div class="recent-item-menu">···</div>
+          </div>
+          <div class="recent-item">
+            <div class="recent-item-icon">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="recent-item-body">
+              <div class="recent-item-title">Federated Learning Privacy</div>
+              <div class="recent-item-meta">5 papers · 1 week ago</div>
+            </div>
+            <div class="recent-item-menu">···</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="recent-section-label" style="margin-bottom:var(--sp-2)">Ask a question about the library</div>
+          <div class="ask-row">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            What are the common themes across my saved papers?
+          </div>
+          <div class="ask-row">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Which papers address trust measurement methods?
+          </div>
+          <input class="form-input" placeholder="Ask a question…" style="margin-top:var(--sp-2)">
+        </div>
+
+      </div>
+    </aside>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 2 — MY LIBRARY
+  ══════════════════════════════════════════════════ -->
+  <main id="screen-library" class="screen main-content">
+
+    <div class="page-header">
+      <div class="page-title">My Library</div>
+      <div class="page-subtitle" id="lib-subtitle">4 papers saved · Thesis: Remote Work Trust</div>
+    </div>
+
+    <!-- Style switcher  BL-15 -->
+    <div class="style-row">
+      <div class="style-row-left">
+        <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--color-text-muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
+        <label for="citation-style">Citation style</label>
+        <select id="citation-style" class="form-select" onchange="switchStyle(this.value)">
+          <option value="ieee" selected>IEEE</option>
+          <option value="apa">APA</option>
+          <option value="mla">MLA</option>
+          <option value="chicago">Chicago</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="switchScreen('outline')">
+        <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Generate outline
+      </button>
+    </div>
+
+    <!-- Library list -->
+    <div id="library-list">
+      <div class="library-item" id="lib-1">
+        <div class="library-item-num">1</div>
+        <div class="library-item-body">
+          <p class="citation-text" data-key="0"></p>
+          <div class="library-item-actions">
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Citation copied')">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy citation
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('BibTeX copied')">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              BibTeX
+            </button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--color-error)" onclick="removeLib('lib-1')">
+              <svg viewBox="0 0 24 24" style="stroke:var(--color-error)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="library-item" id="lib-2">
+        <div class="library-item-num">2</div>
+        <div class="library-item-body">
+          <p class="citation-text" data-key="1"></p>
+          <div class="library-item-actions">
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Citation copied')">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy citation
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('BibTeX copied')">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              BibTeX
+            </button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--color-error)" onclick="removeLib('lib-2')">
+              <svg viewBox="0 0 24 24" style="stroke:var(--color-error)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="library-item" id="lib-3">
+        <div class="library-item-num">3</div>
+        <div class="library-item-body">
+          <p class="citation-text" data-key="2"></p>
+          <div class="library-item-actions">
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Citation copied')">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy citation
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('BibTeX copied')">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              BibTeX
+            </button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--color-error)" onclick="removeLib('lib-3')">
+              <svg viewBox="0 0 24 24" style="stroke:var(--color-error)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="library-item" id="lib-4">
+        <div class="library-item-num">4</div>
+        <div class="library-item-body">
+          <p class="citation-text" data-key="3"></p>
+          <div class="library-item-actions">
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Citation copied')">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy citation
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="showToast('BibTeX copied')">
+              <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              BibTeX
+            </button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--color-error)" onclick="removeLib('lib-4')">
+              <svg viewBox="0 0 24 24" style="stroke:var(--color-error)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state  BL-12 -->
+    <div id="lib-empty" class="empty-state">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <div class="empty-state-title">Library is empty</div>
+      <div class="empty-state-body">Search for papers and save the ones relevant to this project. Your library is scoped to the active project.</div>
+      <button class="btn btn-primary" onclick="switchScreen('search')">Search papers</button>
+    </div>
+
+  </main>
+
+
+  <!-- ══════════════════════════════════════════════════
+       SCREEN 3 — OUTLINE SCAFFOLD
+  ══════════════════════════════════════════════════ -->
+  <main id="screen-outline" class="screen main-content">
+
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-4)">
+      <div>
+        <div class="page-title">Outline Scaffold</div>
+        <div class="page-subtitle">Thesis: Remote Work Trust &nbsp;·&nbsp; Generated 2 hours ago</div>
+      </div>
+      <div class="outline-actions-bar" style="margin-bottom:0">
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Full outline copied to clipboard')">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy all
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Downloading DRAFT PDF…')">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          PDF
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="showToast('Downloading Markdown…')">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Markdown
+        </button>
+      </div>
+    </div>
+
+    <!-- Warning banner  BL-22 -->
+    <div class="alert alert-warning">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Starting scaffold only — bullet ideas and short example passages grounded in your saved library. <strong>Not a finished paper.</strong> Copy or export it, then write the actual paper in your own tool.</span>
+    </div>
+
+    <!-- Title / Abstract -->
+    <div class="outline-section">
+      <div class="outline-section-header">
+        <span class="outline-section-title">Title &amp; Abstract</span>
+        <div class="outline-section-actions">
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Section copied')">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="outline-section-body">
+        <p style="font-size:var(--text-base);font-weight:var(--font-semibold);margin-bottom:var(--sp-3);">Thesis: Remote Work Trust</p>
+        <ul>
+          <li>Define the gap: how trust develops differently in remote vs. co-located teams</li>
+          <li>Scope: longitudinal study of distributed knowledge workers (6 months)</li>
+          <li>Key constructs: interpersonal trust, asynchronous communication, psychological safety</li>
+          <li><strong>Index Terms:</strong> remote work, team trust, virtual collaboration, distributed teams</li>
+        </ul>
+        <div class="draft-passage">
+          <div class="draft-label">Draft — revise before use</div>
+          <p>This paper investigates how trust forms in distributed teams, drawing on Leonardi and Neeley [1] and the meta-analytic evidence from Newman et al. [2]. We argue that co-located trust frameworks inadequately capture the async communication dynamics identified by Golden and Veiga [3].</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- I. Introduction -->
+    <div class="outline-section" id="sec-intro">
+      <div class="outline-section-header">
+        <span class="outline-section-title">I. Introduction</span>
+        <div class="outline-section-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openRegenModal('sec-intro','I. Introduction')">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Regenerate
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Section copied')">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="outline-section-body" id="sec-intro-body">
+        <ul>
+          <li>Motivate the study: growth of remote work post-2020 and unanswered trust questions [1]</li>
+          <li>Highlight the gap: cross-sectional studies miss longitudinal trust dynamics [2]</li>
+          <li>State research question: how does async-first communication moderate trust over time? [3]</li>
+          <li>Preview contributions: dynamic trust model, three longitudinal phases, five mitigation strategies</li>
+        </ul>
+        <div class="draft-passage">
+          <div class="draft-label">Draft — revise before use</div>
+          <p>The rapid normalisation of remote work has outpaced the theoretical frameworks used to study it. Leonardi and Neeley [1] identify three trust phases unique to virtual teams, yet the mechanisms remain underspecified—particularly given the psychological safety literature reviewed by Newman et al. [2].</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- II. Related Work -->
+    <div class="outline-section" id="sec-rw">
+      <div class="outline-section-header">
+        <span class="outline-section-title">II. Related Work</span>
+        <div class="outline-section-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openRegenModal('sec-rw','II. Related Work')">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Regenerate
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Section copied')">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="outline-section-body" id="sec-rw-body">
+        <ul>
+          <li>Seminal trust models (Mayer et al. 1995) and their applicability to virtual contexts</li>
+          <li>Virtual team literature: media richness, social presence, swift trust [1]</li>
+          <li>Meta-analytic evidence on psychological safety as a trust mediator [2]</li>
+          <li>Gap: limited longitudinal studies on async communication and trust erosion [3] [4]</li>
+        </ul>
+        <div class="draft-passage">
+          <div class="draft-label">Draft — revise before use</div>
+          <p>Prior work has largely adopted cross-sectional designs. Leonardi and Neeley [1] address this with a longitudinal approach, yet their sample predates async-first tools examined by Golden and Veiga [3] and Kossek et al. [4].</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- III. Proposed Methodology -->
+    <div class="outline-section" id="sec-method">
+      <div class="outline-section-header">
+        <span class="outline-section-title">III. Proposed Methodology</span>
+        <div class="outline-section-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openRegenModal('sec-method','III. Proposed Methodology')">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Regenerate
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Section copied')">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="outline-section-body" id="sec-method-body">
+        <ul>
+          <li>Mixed-methods longitudinal design: survey waves at T1, T2, T3 (0, 3, 6 months)</li>
+          <li>Sample: 20 fully remote teams (N ≈ 160) across tech and knowledge-work sectors</li>
+          <li>Measures: adapted Mayer trust scale; psychological safety scale from Newman et al. [2]</li>
+          <li>Semi-structured interviews at T2 to surface mechanisms behind quantitative anomalies [1]</li>
+          <li>Analysis: latent growth-curve modelling + thematic coding</li>
+        </ul>
+        <div class="draft-passage">
+          <div class="draft-label">Draft — revise before use</div>
+          <p>We adopt a mixed-methods longitudinal design informed by Leonardi and Neeley [1]. Trust trajectories will be modelled with latent growth-curve analysis, with qualitative data collected at T2 following the triangulation strategy of Newman et al. [2].</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- IV. Expected Contribution -->
+    <div class="outline-section" id="sec-contrib">
+      <div class="outline-section-header">
+        <span class="outline-section-title">IV. Expected Contribution</span>
+        <div class="outline-section-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openRegenModal('sec-contrib','IV. Expected Contribution')">
+            <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Regenerate
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Section copied')">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="outline-section-body" id="sec-contrib-body">
+        <ul>
+          <li>Theoretical: extend dynamic trust models to async-first remote environments [1] [3]</li>
+          <li>Empirical: first longitudinal dataset linking async frequency to trust trajectory</li>
+          <li>Practical: five evidence-based mitigation strategies for remote managers [3]</li>
+          <li>Policy: inform organisational guidelines on hybrid/remote work structure [4]</li>
+        </ul>
+        <div class="draft-passage">
+          <div class="draft-label">Draft — revise before use</div>
+          <p>This study contributes a dynamic longitudinal trust model for async-first teams, extending Leonardi and Neeley [1] and operationalising the psychological safety construct of Newman et al. [2] within a trust context.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- References  BL-19, BL-20 -->
+    <div class="references-section">
+      <div class="references-title">References (IEEE)</div>
+      <div class="reference-item">[1] P. Leonardi and T. Neeley, "Trust in Virtual Teams: How Remote Work Changes Team Dynamics," <em>J. Appl. Psychol.</em>, vol. 107, no. 3, pp. 412–431, 2022.</div>
+      <div class="reference-item">[2] A. Newman, R. Donohue, and N. Eva, "Psychological Safety and Remote Collaboration: A Meta-Analysis," <em>J. Organ. Behav.</em>, vol. 42, no. 5, pp. 627–645, 2021.</div>
+      <div class="reference-item">[3] T. D. Golden and J. F. Veiga, "Asynchronous Communication and the Erosion of Interpersonal Trust in Distributed Teams," <em>MIS Q.</em>, vol. 47, no. 1, pp. 78–101, 2023.</div>
+      <div class="reference-item">[4] S. A. Kossek, B. A. Lautsch, and S. C. Eaton, "Remote Work Arrangements and Work–Family Conflict: Uncovering Trust Dynamics," <em>Acad. Manage. Rev.</em>, vol. 48, no. 2, pp. 201–219, 2020.</div>
+    </div>
+
+  </main>
+
+  <!-- Right panel — Outline screen -->
+  <div id="panel-outline" class="right-panel-slot">
+    <aside class="right-panel">
+      <div class="panel-header">
+        <button class="panel-tab active">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Outline Details
+        </button>
+      </div>
+      <div class="panel-body">
+
+        <div>
+          <div class="recent-section-label" style="margin-bottom:var(--sp-3)">Metadata</div>
+          <div class="meta-row"><span class="meta-key">Project</span><span class="meta-val">Thesis: Remote Work Trust</span></div>
+          <div class="meta-row"><span class="meta-key">Generated</span><span class="meta-val">2 hours ago</span></div>
+          <div class="meta-row"><span class="meta-key">Papers used</span><span class="meta-val">4 sources</span></div>
+          <div class="meta-row"><span class="meta-key">Citation style</span><span class="meta-val">IEEE</span></div>
+          <div class="meta-row"><span class="meta-key">Structure</span><span class="meta-val">IEEE paper</span></div>
+        </div>
+
+        <div>
+          <div class="recent-section-label" style="margin-bottom:var(--sp-2)">Jump to section</div>
+          <div class="section-nav-item" onclick="document.querySelector('.outline-section').scrollIntoView({behavior:'smooth'})">
+            <svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="12"/><line x1="9" y1="6" x2="15" y2="12"/></svg>
+            Title &amp; Abstract
+          </div>
+          <div class="section-nav-item" onclick="document.getElementById('sec-intro').scrollIntoView({behavior:'smooth'})">
+            <svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="12"/><line x1="9" y1="6" x2="15" y2="12"/></svg>
+            I. Introduction
+          </div>
+          <div class="section-nav-item" onclick="document.getElementById('sec-rw').scrollIntoView({behavior:'smooth'})">
+            <svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="12"/><line x1="9" y1="6" x2="15" y2="12"/></svg>
+            II. Related Work
+          </div>
+          <div class="section-nav-item" onclick="document.getElementById('sec-method').scrollIntoView({behavior:'smooth'})">
+            <svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="12"/><line x1="9" y1="6" x2="15" y2="12"/></svg>
+            III. Proposed Methodology
+          </div>
+          <div class="section-nav-item" onclick="document.getElementById('sec-contrib').scrollIntoView({behavior:'smooth'})">
+            <svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="12"/><line x1="9" y1="6" x2="15" y2="12"/></svg>
+            IV. Expected Contribution
+          </div>
+          <div class="section-nav-item" onclick="document.querySelector('.references-section').scrollIntoView({behavior:'smooth'})">
+            <svg viewBox="0 0 24 24"><line x1="9" y1="18" x2="15" y2="12"/><line x1="9" y1="6" x2="15" y2="12"/></svg>
+            References
+          </div>
+        </div>
+
+        <div>
+          <div class="recent-section-label" style="margin-bottom:var(--sp-3)">Export</div>
+          <div style="display:flex;flex-direction:column;gap:var(--sp-2)">
+            <button class="btn btn-secondary" onclick="showToast('Downloading DRAFT PDF…')" style="justify-content:flex-start">
+              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download as PDF (DRAFT)
+            </button>
+            <button class="btn btn-secondary" onclick="showToast('Downloading Markdown…')" style="justify-content:flex-start">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Download as Markdown
+            </button>
+            <button class="btn btn-secondary" onclick="showToast('Full outline copied')" style="justify-content:flex-start">
+              <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy full outline
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary-full btn-primary" onclick="switchScreen('search')">
+          <svg viewBox="0 0 24 24" style="stroke:white"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Regenerate entire outline
+        </button>
+
+      </div>
+    </aside>
+  </div>
+
+</div><!-- /page-body -->
+
+
+<!-- ════════════════════════════════════════════════════
+     REGENERATE MODAL  BL-37  design-system.md §5.17
+════════════════════════════════════════════════════ -->
+<div id="regen-modal" class="modal-backdrop" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="regen-title">Regenerate section?</div>
+    <div class="modal-body">Only this section will be regenerated from your saved library. Every other section stays untouched — no content will be lost.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRegen()">
+        <svg viewBox="0 0 24 24" style="stroke:white"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Regenerate
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     TOAST
+════════════════════════════════════════════════════ -->
+<div id="toast" class="toast">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+/* ── Citation data ────────────────────────────────── */
+const CITES = {
+  ieee: [
+    'P. Leonardi and T. Neeley, "Trust in Virtual Teams: How Remote Work Changes Team Dynamics," <em>J. Appl. Psychol.</em>, vol. 107, no. 3, pp. 412–431, 2022.',
+    'A. Newman, R. Donohue, and N. Eva, "Psychological Safety and Remote Collaboration: A Meta-Analysis," <em>J. Organ. Behav.</em>, vol. 42, no. 5, pp. 627–645, 2021.',
+    'T. D. Golden and J. F. Veiga, "Asynchronous Communication and the Erosion of Interpersonal Trust in Distributed Teams," <em>MIS Q.</em>, vol. 47, no. 1, pp. 78–101, 2023.',
+    'S. A. Kossek, B. A. Lautsch, and S. C. Eaton, "Remote Work Arrangements and Work–Family Conflict: Uncovering Trust Dynamics," <em>Acad. Manage. Rev.</em>, vol. 48, no. 2, pp. 201–219, 2020.'
+  ],
+  apa: [
+    'Leonardi, P., & Neeley, T. (2022). Trust in virtual teams: How remote work changes team dynamics. <em>Journal of Applied Psychology, 107</em>(3), 412–431.',
+    'Newman, A., Donohue, R., & Eva, N. (2021). Psychological safety and remote collaboration: A meta-analysis. <em>Journal of Organizational Behavior, 42</em>(5), 627–645.',
+    'Golden, T. D., & Veiga, J. F. (2023). Asynchronous communication and the erosion of interpersonal trust in distributed teams. <em>MIS Quarterly, 47</em>(1), 78–101.',
+    'Kossek, S. A., Lautsch, B. A., & Eaton, S. C. (2020). Remote work arrangements and work–family conflict: Uncovering trust dynamics. <em>Academy of Management Review, 48</em>(2), 201–219.'
+  ],
+  mla: [
+    'Leonardi, Paul, and Tsedal Neeley. "Trust in Virtual Teams: How Remote Work Changes Team Dynamics." <em>Journal of Applied Psychology</em>, vol. 107, no. 3, 2022, pp. 412–431.',
+    'Newman, Alexander, et al. "Psychological Safety and Remote Collaboration: A Meta-Analysis." <em>Journal of Organizational Behavior</em>, vol. 42, no. 5, 2021, pp. 627–645.',
+    'Golden, Timothy D., and John F. Veiga. "Asynchronous Communication and the Erosion of Interpersonal Trust in Distributed Teams." <em>MIS Quarterly</em>, vol. 47, no. 1, 2023, pp. 78–101.',
+    'Kossek, Sharon A., et al. "Remote Work Arrangements and Work–Family Conflict: Uncovering Trust Dynamics." <em>Academy of Management Review</em>, vol. 48, no. 2, 2020, pp. 201–219.'
+  ],
+  chicago: [
+    'Leonardi, Paul, and Tsedal Neeley. "Trust in Virtual Teams: How Remote Work Changes Team Dynamics." <em>Journal of Applied Psychology</em> 107, no. 3 (2022): 412–431.',
+    'Newman, Alexander, Robyn Donohue, and Nathan Eva. "Psychological Safety and Remote Collaboration: A Meta-Analysis." <em>Journal of Organizational Behavior</em> 42, no. 5 (2021): 627–645.',
+    'Golden, Timothy D., and John F. Veiga. "Asynchronous Communication and the Erosion of Interpersonal Trust in Distributed Teams." <em>MIS Quarterly</em> 47, no. 1 (2023): 78–101.',
+    'Kossek, Sharon A., Barbara A. Lautsch, and Susan C. Eaton. "Remote Work Arrangements and Work–Family Conflict: Uncovering Trust Dynamics." <em>Academy of Management Review</em> 48, no. 2 (2020): 201–219.'
+  ]
+};
+
+/* Initialise citations on load */
+function renderCitations(style) {
+  document.querySelectorAll('#library-list .citation-text').forEach(el => {
+    el.innerHTML = CITES[style][parseInt(el.dataset.key)];
+  });
+}
+renderCitations('ieee');
+
+/* ── Screen switching ─────────────────────────────── */
+const PANELS = { search: 'panel-search', outline: 'panel-outline' };
+
+function switchScreen(name) {
+  /* screens */
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.right-panel-slot').forEach(p => p.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (PANELS[name]) document.getElementById(PANELS[name]).classList.add('active');
+  /* nav items */
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('nav-' + name);
+  if (btn) btn.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+/* ── Save paper ─BL-10──────────────────────────────── */
+function savePaper(id) {
+  const card = document.getElementById('card-' + id);
+  const btn  = document.getElementById('save-btn-' + id);
+  card.classList.add('is-saved');
+  btn.className = 'btn btn-saved btn-sm';
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--color-success);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>Saved to library';
+  showToast('Paper saved to library');
+}
+
+/* ── Citation style switch  BL-15 ────────────────── */
+function switchStyle(style) {
+  renderCitations(style);
+  showToast('Citations re-rendered · ' + style.toUpperCase());
+}
+
+/* ── Remove library item  BL-12 ──────────────────── */
+let libCount = 4;
+function removeLib(id) {
+  const item = document.getElementById(id);
+  item.style.transition = 'opacity 180ms';
+  item.style.opacity = '0';
+  setTimeout(() => {
+    item.remove();
+    libCount--;
+    document.querySelectorAll('#library-list .library-item-num').forEach((el, i) => el.textContent = i + 1);
+    document.getElementById('lib-subtitle').textContent =
+      libCount + ' paper' + (libCount !== 1 ? 's' : '') + ' saved · Thesis: Remote Work Trust';
+    if (libCount === 0) document.getElementById('lib-empty').classList.add('visible');
+  }, 180);
+  showToast('Paper removed from library');
+}
+
+/* ── Search  ──────────────────────────────────────── */
+function handleSearch(e) {
+  e.preventDefault();
+  showToast('Searching — results shown are demo data');
+}
+
+/* ── Regenerate modal  BL-37 ─────────────────────── */
+let regenId = null;
+function openRegenModal(id, title) {
+  regenId = id;
+  document.getElementById('regen-title').textContent = 'Regenerate ' + title + '?';
+  document.getElementById('regen-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('regen-modal').classList.remove('open');
+}
+function confirmRegen() {
+  closeModal();
+  const bodyEl = document.getElementById(regenId + '-body');
+  if (!bodyEl) return;
+  const saved = bodyEl.innerHTML;
+  bodyEl.innerHTML = '<div class="regen-placeholder"><div class="spinner"></div>Regenerating from library…</div>';
+  setTimeout(() => { bodyEl.innerHTML = saved; showToast('Section regenerated'); }, 1800);
+}
+
+/* ── Toast ────────────────────────────────────────── */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+</script>
+</body>
+</html>
