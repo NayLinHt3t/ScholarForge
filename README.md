@@ -14,8 +14,13 @@ No third-party login, no external LLM API, no cloud hosting. Everything runs on 
 .
 ├── rule.md                                  # Legal/compliance rules for AI agents (PDPA, Computer Crime Act, ETA)
 └── .docs/
+    ├── 00-charter/
+    │   ├── project-charter.md                # Team project charter (purpose, objectives, scope, KPIs)
+    │   └── project-charter.docx              # Same charter, Word format for submission
     ├── 00-proposal/
-    │   └── proposal.md                      # Problem statement, target users, solution summary
+    │   ├── proposal.md                      # Problem statement, target users, solution summary
+    │   ├── interview-plan.md                # User interview plan to validate pain points/direction
+    │   └── interview-script.md              # Moderator script: prototype walkthrough + questions, ready to run
     ├── 01-requirements/
     │   └── backlog.md                       # Full product backlog (epics, user stories, MoSCoW priority)
     ├── 02-design/

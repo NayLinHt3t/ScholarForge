@@ -1,8 +1,6 @@
-# [Company Name] — Legal & Compliance Rules for AI Agents
+# ClockChasers — Legal & Compliance Rules for AI Agents
 
 Read this before writing any code that touches user data or user actions.
-
-> Replace `[Company Name]` above. This is a working compliance checklist for engineering decisions, not a legal opinion — have counsel confirm the exact statutory language and any sector-specific rules (health, finance, minors) before relying on it in production.
 
 ---
 
