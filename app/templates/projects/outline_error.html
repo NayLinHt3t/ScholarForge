@@ -1,38 +1,51 @@
 {% extends "base.html" %}
-{% block title %}Generation failed — ScholarForge{% endblock %}
+{% block title %}Outline rejected — ScholarForge{% endblock %}
 
-{% block body %}
-<div class="auth-wrap">
-  <div class="card" style="max-width:500px">
-    <h1 style="color:#dc2626;font-size:1.25rem">Outline rejected</h1>
-    <p class="sub">
-      The generated outline contained citation markers that don't match any of
-      your saved resources. It was not saved.
-    </p>
-
-    <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:12px 14px;margin-bottom:20px;font-size:.875rem">
-      <strong>Invalid markers:</strong>
-      <code style="margin-left:6px">{{ invalid_markers | join(", ") }}</code>
+{% block layout %}
+<div class="auth-page">
+  <div class="auth-box" style="max-width:480px">
+    <div class="auth-brand">
+      <div class="auth-brand-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">SF</div>
+      <div class="auth-brand-name">ScholarForge</div>
     </div>
 
-    <p style="font-size:.85rem;color:#6b7280;margin-bottom:20px">
-      This usually means the AI model invented a source number outside the range
-      of your library. Regenerating typically resolves it.
-    </p>
+    <div class="auth-card">
+      <div class="auth-card-title" style="color:#b45309">Outline rejected</div>
+      <div class="auth-card-subtitle">
+        The generated outline contained citation markers that don't match any of your saved resources.
+        It was not saved.
+      </div>
 
-    {% if outline_id %}
-    <form method="post"
-          action="/projects/{{ project.id }}/outlines/{{ outline_id }}/sections/introduction/regenerate">
-      <button class="btn btn-primary" type="submit">Regenerate section</button>
-    </form>
-    {% else %}
-    <form method="post" action="/projects/{{ project.id }}/outlines">
-      <input type="hidden" name="citation_style" value="{{ citation_style or 'IEEE' }}">
-      <button class="btn btn-primary" type="submit">Try again</button>
-    </form>
-    {% endif %}
+      <div class="alert alert-warning" style="margin-bottom:18px">
+        <div>
+          <strong>Invalid markers:</strong>
+          <code style="margin-left:6px;background:#fef3c7;padding:1px 5px;border-radius:3px">
+            {{ invalid_markers | join(", ") }}
+          </code>
+        </div>
+      </div>
 
-    <p class="divider"><a href="/projects/{{ project.id }}">Back to project</a></p>
+      <p style="font-size:.82rem;color:#64748b;margin-bottom:20px;line-height:1.6">
+        This usually means the AI model invented a citation number outside the range of your library.
+        Regenerating typically resolves it.
+      </p>
+
+      {% if outline_id %}
+      <form method="post"
+            action="/projects/{{ project.id }}/outlines/{{ outline_id }}/sections/introduction/regenerate">
+        <button class="auth-submit" type="submit">Regenerate section</button>
+      </form>
+      {% else %}
+      <form method="post" action="/projects/{{ project.id }}/outlines">
+        <input type="hidden" name="citation_style" value="{{ citation_style or 'IEEE' }}">
+        <button class="auth-submit" type="submit">Try again</button>
+      </form>
+      {% endif %}
+
+      <div class="auth-footer">
+        <a href="/projects/{{ project.id }}">Back to project</a>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}

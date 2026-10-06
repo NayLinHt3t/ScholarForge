@@ -1,40 +1,50 @@
 {% extends "base.html" %}
-{% block title %}Sign up — ScholarForge{% endblock %}
+{% block title %}Create account — ScholarForge{% endblock %}
 
-{% block body %}
-<div class="auth-wrap">
-  <div class="card">
-    <h1>ScholarForge</h1>
-    <p class="sub">Create your account to get started.</p>
+{% block layout %}
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">SF</div>
+      <div class="auth-brand-name">ScholarForge</div>
+      <div class="auth-brand-tag">Research · Write · Cite</div>
+    </div>
 
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
+    <div class="auth-card">
+      <div class="auth-card-title">Create your account</div>
+      <div class="auth-card-subtitle">Start organizing your research in minutes.</div>
 
-    <form method="post" action="/auth/signup">
-      <div class="field">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required autofocus
-               placeholder="you@university.edu">
+      {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+      {% endif %}
+
+      <form method="post" action="/auth/signup">
+        <div class="field">
+          <label for="email">Email address</label>
+          <input id="email" name="email" type="email" required autofocus
+                 placeholder="you@university.edu">
+        </div>
+        <div class="field" style="margin-bottom:16px">
+          <label for="password">Password <span style="color:#94a3b8;font-weight:400">(min. 8 characters)</span></label>
+          <input id="password" name="password" type="password" required minlength="8"
+                 placeholder="••••••••">
+        </div>
+
+        <div class="check-row">
+          <input id="terms" name="terms_accepted" type="checkbox" required value="on">
+          <label for="terms" style="display:inline">
+            I accept the <a href="/terms" target="_blank">Terms of Service</a>
+            and <a href="/privacy" target="_blank">Privacy Policy</a>.
+          </label>
+        </div>
+
+        <button class="auth-submit" type="submit">Create account</button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="/auth/login">Sign in</a>
       </div>
-
-      <div class="field">
-        <label for="password">Password <span style="color:#9ca3af;font-weight:400">(min 8 chars)</span></label>
-        <input id="password" name="password" type="password" required minlength="8">
-      </div>
-
-      <div class="checkbox-row">
-        <input id="terms" name="terms_accepted" type="checkbox" required value="on">
-        <label for="terms">
-          I accept the <a href="/terms" target="_blank">Terms of Service</a>
-          and <a href="/privacy" target="_blank">Privacy Policy</a>.
-        </label>
-      </div>
-
-      <button class="btn" type="submit">Create account</button>
-    </form>
-
-    <p class="divider">Already have an account? <a href="/auth/login">Log in</a></p>
+    </div>
   </div>
 </div>
 {% endblock %}

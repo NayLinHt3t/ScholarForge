@@ -1,189 +1,199 @@
 {% extends "base.html" %}
 {% block title %}Search — {{ project.name }} — ScholarForge{% endblock %}
 
-{% block head %}
-<style>
-  .search-box {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 20px 22px;
-    margin-bottom: 24px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-  }
-  .search-box .field { flex: 1; margin: 0; }
-  .search-box textarea {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: .95rem;
-    font-family: inherit;
-    resize: vertical;
-    min-height: 60px;
-    outline: none;
-  }
-  .search-box textarea:focus { border-color: #2563eb; }
+{% block styles %}
+.search-topbar {
+  background: white; border-bottom: 1px solid #e2e8f0;
+  padding: 12px 28px; position: sticky; top: 0; z-index: 10; flex-shrink: 0;
+}
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 9px;
+  padding: 0 4px 0 14px; transition: border-color .13s, box-shadow .13s;
+}
+.search-bar:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.1);
+  background: white;
+}
+.search-bar svg { color: #94a3b8; flex-shrink: 0; width: 17px; height: 17px; }
+.search-bar textarea {
+  flex: 1; border: none; background: transparent; outline: none;
+  font-size: .9rem; color: #0f172a; resize: none; padding: 11px 0;
+  font-family: inherit; line-height: 1.4; min-height: 42px;
+}
+.search-bar textarea::placeholder { color: #94a3b8; }
+.search-bar .search-btn {
+  background: #3b82f6; color: white; border: none; border-radius: 6px;
+  padding: 8px 18px; font-size: .845rem; font-weight: 600; cursor: pointer;
+  transition: background .13s; white-space: nowrap; flex-shrink: 0;
+}
+.search-bar .search-btn:hover { background: #2563eb; }
 
-  .banner {
-    padding: 12px 16px;
-    border-radius: 7px;
-    font-size: .875rem;
-    margin-bottom: 18px;
-  }
-  .banner-error   { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
-  .banner-warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
-  .banner-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.paper-card {
+  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 18px 20px; margin-bottom: 10px;
+  transition: border-color .13s, box-shadow .13s;
+}
+.paper-card:hover { border-color: #bfdbfe; box-shadow: 0 2px 8px rgba(59,130,246,.07); }
 
-  .result-list { display: flex; flex-direction: column; gap: 14px; }
-  .result-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 18px 20px;
-  }
-  .result-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .result-title  { font-weight: 600; font-size: .95rem; color: #111827; }
-  a.result-title:hover { text-decoration: underline; color: #2563eb; }
-  .source-badge {
-    font-size: .72rem;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .source-semantic_scholar { background: #ede9fe; color: #5b21b6; }
-  .source-crossref         { background: #dcfce7; color: #166534; }
-  .result-meta {
-    font-size: .8rem;
-    color: #6b7280;
-    margin-top: 5px;
-  }
-  .result-abstract {
-    font-size: .85rem;
-    color: #374151;
-    line-height: 1.5;
-    margin-top: 8px;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-  .result-footer { margin-top: 12px; }
-</style>
+.paper-title { font-weight: 700; font-size: .95rem; color: #0f172a; line-height: 1.4; }
+a.paper-title:hover { color: #3b82f6; }
+.paper-meta { font-size: .77rem; color: #94a3b8; margin-top: 5px; }
+.paper-abstract {
+  font-size: .825rem; color: #374151; line-height: 1.6; margin-top: 9px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.paper-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; gap: 8px; }
+.source-badge {
+  font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+}
+.source-semantic_scholar { background: #ede9fe; color: #6d28d9; }
+.source-crossref         { background: #dcfce7; color: #15803d; }
+{% endblock %}
+
+{% block sidebar_nav %}
+<a href="/projects" class="nav-item">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+  All Projects
+</a>
+<hr class="nav-sep">
+<span class="nav-label">{{ project.name[:24] }}{% if project.name|length > 24 %}…{% endif %}</span>
+<a href="/projects/{{ project.id }}/search" class="nav-item active">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
+  Search Papers
+</a>
+<a href="/projects/{{ project.id }}" class="nav-item">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
+  My Library
+</a>
+<a href="/projects/{{ project.id }}" class="nav-item">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+  Generate Outline
+</a>
+<a href="/projects/{{ project.id }}/summarize" class="nav-item">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></svg>
+  Summarize Sources
+</a>
 {% endblock %}
 
 {% block body %}
-<nav class="nav">
-  <a class="nav-brand" href="/projects">ScholarForge</a>
-  <div class="nav-right">
-    <a href="/projects/{{ project.id }}" style="color:#6b7280">{{ project.name }}</a>
-    <span>{{ user.email }}</span>
-    <form method="post" action="/auth/logout">
-      <button class="btn-sm btn-outline" type="submit">Log out</button>
-    </form>
+{# Search topbar — replaces standard topbar #}
+<div class="search-topbar">
+  <div class="breadcrumb" style="margin-bottom:10px">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Search Papers</span>
   </div>
-</nav>
-
-<div class="container">
-  <a class="back-link" href="/projects/{{ project.id }}">← {{ project.name }}</a>
-  <div class="page-header">
-    <h1 class="page-title">Search for papers</h1>
-  </div>
-
-  <form class="search-box" method="get" action="/projects/{{ project.id }}/search">
-    <div class="field">
-      <label for="q" style="font-size:.875rem;font-weight:500;color:#374151;display:block;margin-bottom:5px">
-        Describe your research idea
-      </label>
-      <textarea id="q" name="q" rows="2"
-                placeholder="e.g. how remote work affects team trust and collaboration in software companies">{{ q }}</textarea>
+  <form method="get" action="/projects/{{ project.id }}/search">
+    <div class="search-bar">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
+      <textarea name="q" rows="1"
+                placeholder="Describe your research idea — e.g. how remote work affects team trust in software companies"
+                oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+      >{{ q }}</textarea>
+      <button class="search-btn" type="submit">Search</button>
     </div>
-    <button class="btn btn-primary btn-sm" type="submit" style="white-space:nowrap">Search</button>
   </form>
+</div>
 
+<div class="page-body">
   {% if flash_saved %}
-  <div class="banner" style="background:#f0fdf4;border:1px solid #86efac;color:#166534;margin-bottom:18px">
-    Paper saved to your library. <a href="/projects/{{ project.id }}">View library</a>
+  <div class="alert alert-success">
+    Paper saved to your library. <a href="/projects/{{ project.id }}" style="font-weight:600">View library →</a>
   </div>
   {% endif %}
   {% if flash_duplicate %}
-  <div class="banner banner-warning" style="margin-bottom:18px">
-    That paper is already in your library.
-  </div>
+  <div class="alert alert-warning">That paper is already in your library.</div>
   {% endif %}
 
   {% if ollama_down %}
-  <div class="banner banner-error">
-    <strong>The local AI engine (Ollama) is not running.</strong>
-    Start Ollama with <code>ollama serve</code> and try again.
+  <div class="alert alert-error">
+    <strong>Ollama is not running.</strong>&nbsp;
+    Start it with <code>ollama serve</code> and try searching again.
   </div>
   {% endif %}
 
   {% if source_errors %}
-  <div class="banner banner-warning">
+  <div class="alert alert-warning">
     Could not reach: {{ source_errors | join(", ") }}. Showing results from the remaining source only.
   </div>
   {% endif %}
 
   {% if low_confidence %}
-  <div class="banner banner-warning">
-    Results may not closely match your idea — try rephrasing with more specific terms.
+  <div class="alert alert-info">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
+    <span>Results may not closely match your idea. Try rephrasing with more specific terms or a different angle.</span>
   </div>
   {% endif %}
 
   {% if results %}
-  <div class="result-list">
-    {% for r in results %}
-    <div class="result-card">
-      <div class="result-header">
-        {% if r.url %}
-        <a class="result-title" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a>
-        {% else %}
-        <span class="result-title">{{ r.title }}</span>
-        {% endif %}
-        <span class="source-badge source-{{ r.source }}">
-          {{ "Semantic Scholar" if r.source == "semantic_scholar" else "CrossRef" }}
-        </span>
-      </div>
-
-      <div class="result-meta">
-        {% if r.authors %}
-          {{ r.authors[:3] | join(", ") }}{% if r.authors | length > 3 %} et al.{% endif %}
-        {% endif %}
-        {% if r.year %} · {{ r.year }}{% endif %}
-        {% if r.venue %} · <em>{{ r.venue }}</em>{% endif %}
-      </div>
-
-      {% if r.abstract %}
-      <p class="result-abstract">{{ r.abstract }}</p>
-      {% endif %}
-
-      <div class="result-footer">
-        <form method="post" action="/projects/{{ project.id }}/library">
-          <input type="hidden" name="title"     value="{{ r.title }}">
-          <input type="hidden" name="authors"   value="{{ r.authors | tojson }}">
-          <input type="hidden" name="year"      value="{{ r.year or '' }}">
-          <input type="hidden" name="venue"     value="{{ r.venue or '' }}">
-          <input type="hidden" name="doi"       value="{{ r.doi or '' }}">
-          <input type="hidden" name="arxiv_id"  value="{{ r.arxiv_id or '' }}">
-          <input type="hidden" name="url"       value="{{ r.url or '' }}">
-          <input type="hidden" name="abstract"  value="{{ r.abstract or '' }}">
-          <input type="hidden" name="source"     value="{{ r.source }}">
-          <input type="hidden" name="return_to"  value="{{ current_url }}">
-          <button type="submit" class="btn-sm btn-primary">Save to library</button>
-        </form>
-      </div>
-    </div>
-    {% endfor %}
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <span class="text-sm text-muted">{{ results | length }} result(s) for <strong style="color:#0f172a">"{{ q }}"</strong></span>
   </div>
 
+  {% for r in results %}
+  <div class="paper-card">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        {% if r.url %}
+        <a class="paper-title" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a>
+        {% else %}
+        <span class="paper-title">{{ r.title }}</span>
+        {% endif %}
+        <div class="paper-meta">
+          {% if r.authors %}{{ r.authors[:3] | join(", ") }}{% if r.authors | length > 3 %} et al.{% endif %}{% endif %}
+          {% if r.year %} · {{ r.year }}{% endif %}
+          {% if r.venue %} · <em>{{ r.venue }}</em>{% endif %}
+        </div>
+        {% if r.abstract %}
+        <p class="paper-abstract">{{ r.abstract }}</p>
+        {% endif %}
+      </div>
+      <span class="source-badge source-{{ r.source }}" style="flex-shrink:0;margin-top:2px">
+        {{ "Semantic Scholar" if r.source == "semantic_scholar" else "CrossRef" }}
+      </span>
+    </div>
+
+    <div class="paper-footer">
+      <div class="flex gap-2 items-center">
+        {% if r.doi %}
+        <span class="text-xs text-muted">DOI: {{ r.doi }}</span>
+        {% endif %}
+      </div>
+      <form method="post" action="/projects/{{ project.id }}/library">
+        <input type="hidden" name="title"     value="{{ r.title }}">
+        <input type="hidden" name="authors"   value="{{ r.authors | tojson }}">
+        <input type="hidden" name="year"      value="{{ r.year or '' }}">
+        <input type="hidden" name="venue"     value="{{ r.venue or '' }}">
+        <input type="hidden" name="doi"       value="{{ r.doi or '' }}">
+        <input type="hidden" name="arxiv_id"  value="{{ r.arxiv_id or '' }}">
+        <input type="hidden" name="url"       value="{{ r.url or '' }}">
+        <input type="hidden" name="abstract"  value="{{ r.abstract or '' }}">
+        <input type="hidden" name="source"    value="{{ r.source }}">
+        <input type="hidden" name="return_to" value="{{ current_url }}">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Save to library
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+
   {% elif q and not ollama_down %}
-  <div class="empty-state">
-    No papers found for that idea. Try using different keywords or a broader description.
+  <div class="card empty-state" style="margin-top:24px">
+    <div class="empty-icon">🔍</div>
+    <p>No papers found for that idea.<br>Try different keywords or a broader description.</p>
+  </div>
+  {% elif not q %}
+  <div style="margin-top:32px;text-align:center;color:#94a3b8;font-size:.875rem">
+    <div style="font-size:2rem;margin-bottom:12px">🔍</div>
+    <p>Type your research idea above and press <strong style="color:#64748b">Search</strong>.</p>
+    <p style="margin-top:6px;font-size:.8rem">Results are ranked by semantic similarity to your idea.</p>
   </div>
   {% endif %}
 </div>

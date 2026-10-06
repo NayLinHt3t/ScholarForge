@@ -1,32 +1,38 @@
 {% extends "base.html" %}
 {% block title %}Delete account — ScholarForge{% endblock %}
 
-{% block body %}
-<div class="auth-wrap">
-  <div class="card">
-    <h1 style="color:#dc2626">Delete account</h1>
-    <p class="sub">
-      This permanently removes your account, all projects, saved resources, and
-      generated outlines. This cannot be undone.
-    </p>
+{% block layout %}
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="auth-brand-icon" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">SF</div>
+      <div class="auth-brand-name">ScholarForge</div>
+    </div>
 
-    {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-    {% endif %}
-
-    <form method="post" action="/auth/delete-account">
-      <div class="field">
-        <label for="email_confirm">
-          Confirm by typing your email address
-        </label>
-        <input id="email_confirm" name="email_confirm" type="email" required autofocus
-               placeholder="you@university.edu">
+    <div class="auth-card">
+      <div class="auth-card-title" style="color:#dc2626">Delete account</div>
+      <div class="auth-card-subtitle">
+        This permanently removes your account, all projects, saved resources, and generated outlines.
+        This action <strong>cannot be undone</strong>.
       </div>
 
-      <button class="btn btn-danger" type="submit">Permanently delete my account</button>
-    </form>
+      {% if error %}
+      <div class="alert alert-error">{{ error }}</div>
+      {% endif %}
 
-    <p class="divider"><a href="/projects">Cancel</a></p>
+      <form method="post" action="/auth/delete-account">
+        <div class="field" style="margin-bottom:20px">
+          <label for="email_confirm">Type your email address to confirm</label>
+          <input id="email_confirm" name="email_confirm" type="email" required autofocus
+                 placeholder="you@university.edu">
+        </div>
+        <button class="auth-submit danger" type="submit">Permanently delete my account</button>
+      </form>
+
+      <div class="auth-footer">
+        <a href="/projects">Cancel — go back to my projects</a>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
