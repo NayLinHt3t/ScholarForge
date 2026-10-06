@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ outline.label or "Outline" }} — ScholarForge{% endblock %}
+
+{% block head %}
+<style>
+  .outline-meta {
+    display: flex; align-items: center; gap: 16px;
+    font-size: .8rem; color: #9ca3af; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .style-badge {
+    background: #eff6ff; color: #1d4ed8;
+    padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: .75rem;
+  }
+  .section-card {
+    background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 8px; margin-bottom: 16px; overflow: hidden;
+  }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+    gap: 12px;
+  }
+  .section-label { font-weight: 600; font-size: .9rem; color: #111827; }
+  .section-actions { display: flex; gap: 8px; align-items: center; }
+  .section-body {
+    padding: 16px 18px; font-size: .875rem; line-height: 1.7; color: #374151;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .regen-flash {
+    background: #f0fdf4; border: 1px solid #86efac; color: #166534;
+    padding: 8px 16px; font-size: .85rem; border-radius: 6px; margin-bottom: 18px;
+  }
+  .copy-btn {
+    background: none; border: 1px solid #d1d5db; border-radius: 5px;
+    padding: 4px 10px; font-size: .78rem; cursor: pointer; color: #374151;
+  }
+  .copy-btn:hover { background: #f3f4f6; }
+  .top-actions {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <a class="nav-brand" href="/projects">ScholarForge</a>
+  <div class="nav-right">
+    <a href="/projects/{{ project.id }}" style="color:#6b7280">{{ project.name }}</a>
+    <span>{{ user.email }}</span>
+    <form method="post" action="/auth/logout">
+      <button class="btn-sm btn-outline" type="submit">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container">
+  <a class="back-link" href="/projects/{{ project.id }}">← {{ project.name }}</a>
+
+  {% if request.query_params.get("ollama_down") %}
+  <div class="alert alert-error" style="margin-bottom:18px">
+    <strong>The local AI engine (Ollama) is not running.</strong>
+    Start Ollama with <code>ollama serve</code> and try regenerating.
+  </div>
+  {% endif %}
+
+  {% set regen_key = request.query_params.get("regenerated") %}
+  {% if regen_key %}
+  <div class="regen-flash">
+    Section regenerated: <strong>{{ section_names.get(regen_key, regen_key) }}</strong>
+  </div>
+  {% endif %}
+
+  <div class="page-header">
+    <h1 class="page-title" style="font-size:1.2rem">{{ outline.label or "Generated Outline" }}</h1>
+    <form method="post" action="/projects/{{ project.id }}/outlines/{{ outline.id }}/delete"
+          onsubmit="return confirm('Delete this outline?')">
+      <button type="submit" class="btn-sm btn-outline"
+              style="color:#dc2626;border-color:#fca5a5">Delete outline</button>
+    </form>
+  </div>
+
+  <div class="outline-meta">
+    <span class="style-badge">{{ outline.citation_style }}</span>
+    <span>Generated {{ outline.created_at.strftime("%b %d, %Y") }}</span>
+    <span>{{ outline.cited_resource_ids | length }} source(s)</span>
+  </div>
+
+  <div class="top-actions">
+    <button class="btn-sm btn-primary" onclick="copyAll()">Copy all</button>
+  </div>
+
+  {% for key in section_order %}
+    {% if key in outline.sections and outline.sections[key] %}
+    <div class="section-card" id="card-{{ key }}">
+      <div class="section-header">
+        <span class="section-label">{{ section_names[key] }}</span>
+        <div class="section-actions">
+          <button class="copy-btn" onclick="copySection('{{ key }}')">Copy</button>
+          {% if key in regenerable %}
+          <form method="post"
+                action="/projects/{{ project.id }}/outlines/{{ outline.id }}/sections/{{ key }}/regenerate"
+                style="margin:0">
+            <button type="submit" class="btn-sm btn-outline" style="font-size:.78rem">
+              Regenerate
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div class="section-body" id="body-{{ key }}">{{ outline.sections[key] }}</div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<script>
+function copySection(key) {
+  const el = document.getElementById('body-' + key);
+  if (el) navigator.clipboard.writeText(el.textContent.trim());
+}
+
+function copyAll() {
+  const text = {{ outline.content | tojson }};
+  navigator.clipboard.writeText(text);
+}
+</script>
+{% endblock %}

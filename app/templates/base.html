@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ScholarForge{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      min-height: 100vh;
+    }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* auth card layout */
+    .auth-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+      padding: 36px 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .card h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+    .card .sub  { color: #6b7280; font-size: .9rem; margin-bottom: 24px; }
+
+    /* form elements */
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    .field label { font-size: .875rem; font-weight: 500; color: #374151; }
+    .field input[type="email"],
+    .field input[type="password"],
+    .field input[type="text"] {
+      padding: 9px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .field input:focus { border-color: #2563eb; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 20px;
+      font-size: .875rem;
+      color: #374151;
+    }
+    .checkbox-row input { margin-top: 2px; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+
+    .alert {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: .875rem;
+      margin-bottom: 18px;
+    }
+    .alert-error { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+
+    .divider { text-align: center; color: #9ca3af; font-size: .85rem; margin: 20px 0; }
+
+    /* ── app layout ── */
+    .nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .nav-brand { font-weight: 700; font-size: 1.05rem; color: #111827; text-decoration: none; }
+    .nav-right  { display: flex; align-items: center; gap: 16px; font-size: .875rem; color: #6b7280; }
+    .nav-right form { margin: 0; }
+
+    .container { max-width: 920px; margin: 0 auto; padding: 36px 24px; }
+
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+    }
+    .page-title { font-size: 1.35rem; font-weight: 700; }
+
+    /* project grid */
+    .project-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
+    .project-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px 22px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .project-card h3 { font-size: 1rem; font-weight: 600; }
+    .project-card .meta { font-size: .8rem; color: #9ca3af; }
+    .project-card .card-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+    /* small buttons */
+    .btn-sm {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: .835rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      text-decoration: none;
+      display: inline-block;
+      line-height: 1.4;
+    }
+    .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn-primary:hover { background: #1d4ed8; text-decoration: none; }
+    .btn-outline { background: #fff; color: #374151; border-color: #d1d5db; }
+    .btn-outline:hover { background: #f9fafb; text-decoration: none; }
+    .btn-red { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .btn-red:hover { background: #b91c1c; text-decoration: none; }
+
+    /* inline create form */
+    .create-form {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 18px 22px;
+      display: flex; gap: 10px; align-items: flex-end;
+      margin-bottom: 28px;
+    }
+    .create-form .field { margin: 0; flex: 1; }
+    .create-form .field input {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: .95rem;
+      outline: none;
+      width: 100%;
+    }
+    .create-form .field input:focus { border-color: #2563eb; }
+
+    .empty-state { text-align: center; color: #9ca3af; padding: 56px 0; font-size: .95rem; }
+
+    /* section blocks inside project detail */
+    .section-block {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .section-block h2 { font-size: 1rem; font-weight: 600; margin-bottom: 12px; }
+    .section-placeholder { color: #9ca3af; font-size: .9rem; }
+
+    .back-link { font-size: .875rem; color: #6b7280; display: inline-block; margin-bottom: 20px; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block body %}{% endblock %}
+</body>
+</html>

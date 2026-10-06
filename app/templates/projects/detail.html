@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — ScholarForge{% endblock %}
+
+{% block head %}
+<style>
+  .resource-list { display: flex; flex-direction: column; gap: 12px; }
+  .resource-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 7px;
+    padding: 14px 16px;
+    background: #fafafa;
+  }
+  .resource-title { font-weight: 600; font-size: .9rem; color: #111827; }
+  a.resource-title:hover { color: #2563eb; text-decoration: underline; }
+  .resource-meta { font-size: .78rem; color: #6b7280; margin-top: 3px; }
+  .resource-actions { margin-top: 8px; }
+
+  .banner-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <a class="nav-brand" href="/projects">ScholarForge</a>
+  <div class="nav-right">
+    <span>{{ user.email }}</span>
+    <form method="post" action="/auth/logout">
+      <button class="btn-sm btn-outline" type="submit">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container">
+  <a class="back-link" href="/projects">← All projects</a>
+
+  {% if flash_saved %}
+  <div class="banner banner-success" style="margin-bottom:18px">Paper saved to library.</div>
+  {% endif %}
+  {% if flash_duplicate %}
+  <div class="banner banner-warning" style="margin-bottom:18px">
+    This paper is already in your library.
+  </div>
+  {% endif %}
+  {% if flash_ollama_down %}
+  <div class="alert alert-error" style="margin-bottom:18px">
+    <strong>The local AI engine (Ollama) is not running.</strong>
+    Start Ollama with <code>ollama serve</code> and try again.
+  </div>
+  {% endif %}
+  {% if flash_gen_error %}
+  <div class="alert alert-error" style="margin-bottom:18px">
+    Could not generate outline. Make sure you have saved resources and Ollama is running.
+  </div>
+  {% endif %}
+
+  <div class="page-header">
+    <h1 class="page-title">{{ project.name }}</h1>
+    <a class="btn-sm btn-outline" href="/projects/{{ project.id }}/delete"
+       style="color:#dc2626;border-color:#fca5a5">Delete project</a>
+  </div>
+
+  <!-- Saved Resources -->
+  <div class="section-block">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="margin:0">Saved Resources ({{ resources | length }})</h2>
+      <a class="btn-sm btn-primary" href="/projects/{{ project.id }}/search">+ Search for papers</a>
+    </div>
+
+    {% if resources %}
+    <div class="resource-list">
+      {% for r in resources %}
+      <div class="resource-item">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1;min-width:0">
+            {% if r.url %}
+            <a class="resource-title" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a>
+            {% else %}
+            <span class="resource-title">{{ r.title }}</span>
+            {% endif %}
+            <div class="resource-meta">
+              {% if r.authors %}
+                {{ r.authors[:3] | join(", ") }}{% if r.authors | length > 3 %} et al.{% endif %}
+              {% endif %}
+              {% if r.year %} · {{ r.year }}{% endif %}
+              {% if r.venue %} · <em>{{ r.venue }}</em>{% endif %}
+            </div>
+          </div>
+          <div class="resource-actions" style="flex-shrink:0">
+            <form method="post" action="/projects/{{ project.id }}/library/{{ r.id }}/delete">
+              <button type="submit" class="btn-sm btn-outline"
+                      style="color:#dc2626;border-color:#fca5a5;font-size:.78rem">
+                Remove
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="section-placeholder">
+      No resources saved yet.
+      <a href="/projects/{{ project.id }}/search">Search for papers</a> to add them here.
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Generated Outlines -->
+  <div class="section-block">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="margin:0">Generated Outlines ({{ outlines | length }})</h2>
+    </div>
+
+    {% if resources %}
+    <form method="post" action="/projects/{{ project.id }}/outlines"
+          style="display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap">
+      <div class="field" style="margin:0">
+        <label style="font-size:.875rem;font-weight:500;color:#374151;display:block;margin-bottom:5px">
+          Citation style
+        </label>
+        <select name="citation_style"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;background:#fff">
+          {% for s in citation_styles %}
+          <option value="{{ s }}" {% if s == "IEEE" %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" style="white-space:nowrap">
+        Generate outline
+      </button>
+    </form>
+    {% endif %}
+
+    {% if outlines %}
+    <div class="resource-list">
+      {% for o in outlines %}
+      <div class="resource-item" style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <a class="resource-title" href="/projects/{{ project.id }}/outlines/{{ o.id }}">
+            {{ o.label or "Untitled outline" }}
+          </a>
+          <div class="resource-meta">
+            {{ o.citation_style }} · {{ o.created_at.strftime("%b %d, %Y") }}
+            · {{ o.cited_resource_ids | length }} source(s)
+          </div>
+        </div>
+        <form method="post" action="/projects/{{ project.id }}/outlines/{{ o.id }}/delete"
+              onsubmit="return confirm('Delete this outline?')">
+          <button type="submit" class="btn-sm btn-outline"
+                  style="color:#dc2626;border-color:#fca5a5;font-size:.78rem">Remove</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="section-placeholder">
+      No outlines generated yet.
+      {% if not resources %}
+      Save some resources first, then generate an outline.
+      {% endif %}
+    </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

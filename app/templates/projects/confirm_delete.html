@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Delete project — ScholarForge{% endblock %}
+
+{% block body %}
+<div class="auth-wrap">
+  <div class="card">
+    <h1 style="color:#dc2626">Delete project?</h1>
+    <p class="sub">
+      "<strong>{{ project.name }}</strong>" and all its saved resources and generated
+      outlines will be permanently deleted. This cannot be undone.
+    </p>
+
+    <form method="post" action="/projects/{{ project.id }}/delete">
+      <button class="btn btn-danger" type="submit">Yes, delete this project</button>
+    </form>
+
+    <p class="divider"><a href="/projects/{{ project.id }}">Cancel</a></p>
+  </div>
+</div>
+{% endblock %}

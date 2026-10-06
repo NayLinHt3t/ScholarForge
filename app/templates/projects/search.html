@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Search — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block head %}
+<style>
+  .search-box {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .search-box .field { flex: 1; margin: 0; }
+  .search-box textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: .95rem;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 60px;
+    outline: none;
+  }
+  .search-box textarea:focus { border-color: #2563eb; }
+
+  .banner {
+    padding: 12px 16px;
+    border-radius: 7px;
+    font-size: .875rem;
+    margin-bottom: 18px;
+  }
+  .banner-error   { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+  .banner-warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+  .banner-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+  .result-list { display: flex; flex-direction: column; gap: 14px; }
+  .result-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .result-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .result-title  { font-weight: 600; font-size: .95rem; color: #111827; }
+  a.result-title:hover { text-decoration: underline; color: #2563eb; }
+  .source-badge {
+    font-size: .72rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .source-semantic_scholar { background: #ede9fe; color: #5b21b6; }
+  .source-crossref         { background: #dcfce7; color: #166534; }
+  .result-meta {
+    font-size: .8rem;
+    color: #6b7280;
+    margin-top: 5px;
+  }
+  .result-abstract {
+    font-size: .85rem;
+    color: #374151;
+    line-height: 1.5;
+    margin-top: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .result-footer { margin-top: 12px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <a class="nav-brand" href="/projects">ScholarForge</a>
+  <div class="nav-right">
+    <a href="/projects/{{ project.id }}" style="color:#6b7280">{{ project.name }}</a>
+    <span>{{ user.email }}</span>
+    <form method="post" action="/auth/logout">
+      <button class="btn-sm btn-outline" type="submit">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container">
+  <a class="back-link" href="/projects/{{ project.id }}">← {{ project.name }}</a>
+  <div class="page-header">
+    <h1 class="page-title">Search for papers</h1>
+  </div>
+
+  <form class="search-box" method="get" action="/projects/{{ project.id }}/search">
+    <div class="field">
+      <label for="q" style="font-size:.875rem;font-weight:500;color:#374151;display:block;margin-bottom:5px">
+        Describe your research idea
+      </label>
+      <textarea id="q" name="q" rows="2"
+                placeholder="e.g. how remote work affects team trust and collaboration in software companies">{{ q }}</textarea>
+    </div>
+    <button class="btn btn-primary btn-sm" type="submit" style="white-space:nowrap">Search</button>
+  </form>
+
+  {% if flash_saved %}
+  <div class="banner" style="background:#f0fdf4;border:1px solid #86efac;color:#166534;margin-bottom:18px">
+    Paper saved to your library. <a href="/projects/{{ project.id }}">View library</a>
+  </div>
+  {% endif %}
+  {% if flash_duplicate %}
+  <div class="banner banner-warning" style="margin-bottom:18px">
+    That paper is already in your library.
+  </div>
+  {% endif %}
+
+  {% if ollama_down %}
+  <div class="banner banner-error">
+    <strong>The local AI engine (Ollama) is not running.</strong>
+    Start Ollama with <code>ollama serve</code> and try again.
+  </div>
+  {% endif %}
+
+  {% if source_errors %}
+  <div class="banner banner-warning">
+    Could not reach: {{ source_errors | join(", ") }}. Showing results from the remaining source only.
+  </div>
+  {% endif %}
+
+  {% if low_confidence %}
+  <div class="banner banner-warning">
+    Results may not closely match your idea — try rephrasing with more specific terms.
+  </div>
+  {% endif %}
+
+  {% if results %}
+  <div class="result-list">
+    {% for r in results %}
+    <div class="result-card">
+      <div class="result-header">
+        {% if r.url %}
+        <a class="result-title" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a>
+        {% else %}
+        <span class="result-title">{{ r.title }}</span>
+        {% endif %}
+        <span class="source-badge source-{{ r.source }}">
+          {{ "Semantic Scholar" if r.source == "semantic_scholar" else "CrossRef" }}
+        </span>
+      </div>
+
+      <div class="result-meta">
+        {% if r.authors %}
+          {{ r.authors[:3] | join(", ") }}{% if r.authors | length > 3 %} et al.{% endif %}
+        {% endif %}
+        {% if r.year %} · {{ r.year }}{% endif %}
+        {% if r.venue %} · <em>{{ r.venue }}</em>{% endif %}
+      </div>
+
+      {% if r.abstract %}
+      <p class="result-abstract">{{ r.abstract }}</p>
+      {% endif %}
+
+      <div class="result-footer">
+        <form method="post" action="/projects/{{ project.id }}/library">
+          <input type="hidden" name="title"     value="{{ r.title }}">
+          <input type="hidden" name="authors"   value="{{ r.authors | tojson }}">
+          <input type="hidden" name="year"      value="{{ r.year or '' }}">
+          <input type="hidden" name="venue"     value="{{ r.venue or '' }}">
+          <input type="hidden" name="doi"       value="{{ r.doi or '' }}">
+          <input type="hidden" name="arxiv_id"  value="{{ r.arxiv_id or '' }}">
+          <input type="hidden" name="url"       value="{{ r.url or '' }}">
+          <input type="hidden" name="abstract"  value="{{ r.abstract or '' }}">
+          <input type="hidden" name="source"     value="{{ r.source }}">
+          <input type="hidden" name="return_to"  value="{{ current_url }}">
+          <button type="submit" class="btn-sm btn-primary">Save to library</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% elif q and not ollama_down %}
+  <div class="empty-state">
+    No papers found for that idea. Try using different keywords or a broader description.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

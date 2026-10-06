@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}My Projects — ScholarForge{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <a class="nav-brand" href="/projects">ScholarForge</a>
+  <div class="nav-right">
+    <span>{{ user.email }}</span>
+    <form method="post" action="/auth/logout">
+      <button class="btn-sm btn-outline" type="submit">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1 class="page-title">My Projects</h1>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-error" style="margin-bottom:20px">{{ error }}</div>
+  {% endif %}
+
+  <form class="create-form" method="post" action="/projects">
+    <div class="field">
+      <label for="name" style="font-size:.875rem;font-weight:500;color:#374151;display:block;margin-bottom:5px">
+        New project name
+      </label>
+      <input id="name" name="name" type="text" required maxlength="255"
+             placeholder="e.g. Thesis: Remote Work Trust">
+    </div>
+    <button class="btn btn-primary btn-sm" type="submit" style="white-space:nowrap">
+      + Create project
+    </button>
+  </form>
+
+  {% if projects %}
+  <div class="project-grid">
+    {% for p in projects %}
+    <div class="project-card">
+      <h3>{{ p.name }}</h3>
+      <p class="meta">Created {{ p.created_at.strftime("%b %d, %Y") }}</p>
+      <div class="card-actions">
+        <a class="btn-sm btn-primary" href="/projects/{{ p.id }}">Open</a>
+        <a class="btn-sm btn-outline" href="/projects/{{ p.id }}/delete">Delete</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    No projects yet. Create one above to get started.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

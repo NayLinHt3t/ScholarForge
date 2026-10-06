@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sign up — ScholarForge{% endblock %}
+
+{% block body %}
+<div class="auth-wrap">
+  <div class="card">
+    <h1>ScholarForge</h1>
+    <p class="sub">Create your account to get started.</p>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/auth/signup">
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required autofocus
+               placeholder="you@university.edu">
+      </div>
+
+      <div class="field">
+        <label for="password">Password <span style="color:#9ca3af;font-weight:400">(min 8 chars)</span></label>
+        <input id="password" name="password" type="password" required minlength="8">
+      </div>
+
+      <div class="checkbox-row">
+        <input id="terms" name="terms_accepted" type="checkbox" required value="on">
+        <label for="terms">
+          I accept the <a href="/terms" target="_blank">Terms of Service</a>
+          and <a href="/privacy" target="_blank">Privacy Policy</a>.
+        </label>
+      </div>
+
+      <button class="btn" type="submit">Create account</button>
+    </form>
+
+    <p class="divider">Already have an account? <a href="/auth/login">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

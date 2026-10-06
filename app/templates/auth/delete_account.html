@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Delete account — ScholarForge{% endblock %}
+
+{% block body %}
+<div class="auth-wrap">
+  <div class="card">
+    <h1 style="color:#dc2626">Delete account</h1>
+    <p class="sub">
+      This permanently removes your account, all projects, saved resources, and
+      generated outlines. This cannot be undone.
+    </p>
+
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" action="/auth/delete-account">
+      <div class="field">
+        <label for="email_confirm">
+          Confirm by typing your email address
+        </label>
+        <input id="email_confirm" name="email_confirm" type="email" required autofocus
+               placeholder="you@university.edu">
+      </div>
+
+      <button class="btn btn-danger" type="submit">Permanently delete my account</button>
+    </form>
+
+    <p class="divider"><a href="/projects">Cancel</a></p>
+  </div>
+</div>
+{% endblock %}
