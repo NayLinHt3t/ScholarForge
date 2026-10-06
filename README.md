@@ -1,69 +1,86 @@
 # ScholarForge
 
-A local, account-based research assistant for students: describe a research idea in plain language, get back semantically relevant papers, save them into a project-scoped library with auto-formatted citations, and generate a read-only idea/outline scaffold (not a finished paper) to kick-start the actual writing — which stays the student's own task.
+A local, account-based research assistant for students: describe a research idea in plain language, get back semantically relevant papers, save them into a project-scoped library with auto-formatted citations, and generate a read-only IEEE outline scaffold to kick-start writing — which stays the student's own task.
 
-No third-party login, no external LLM API, no cloud hosting. Everything runs on the student's own machine.
+No third-party login, no external LLM API. Everything runs on the student's own machine.
 
-## Status
+## Features
 
-**Documentation and design complete; implementation not yet started.** This repo currently holds the case-study deliverables (proposal, backlog, design artifacts, compliance mapping) and a clickable static prototype. The build order and technical plan are ready to execute — see [Implementation plan](#implementation-plan) below.
+- **Semantic paper search** — free-text idea query re-ranked by embedding cosine similarity against Semantic Scholar and CrossRef results; low-confidence results trigger a "try rephrasing" notice
+- **Project-scoped library** — save papers into named projects; duplicate detection per project; delete without affecting other projects
+- **Citation formatting** — IEEE (default), APA, MLA, Chicago; instant client-side style switch with server-side persistence; BibTeX export per resource and for the whole library
+- **Outline generation (RAG)** — Ollama-powered IEEE scaffold (Title / Abstract / Index Terms / I–IV sections / References) grounded in saved sources; post-generation citation validator rejects hallucinated references; per-section regeneration
+- **Draft callout** — each section's AI-drafted paragraph is labeled "Draft — revise before use" in a distinct callout box
+- **Source summarization** — select sources, generate a 150–300 word cited synthesis headed by the project name; citation validator enforced
+- **Export** — copy any section or the full outline; download as `.md` or PDF
+
+## Stack
+
+| Layer | Tech |
+|---|---|
+| Backend | Python 3.12 · FastAPI · Jinja2 |
+| Database | Google Cloud Firestore |
+| AI | Ollama — `nomic-embed-text` (embeddings) · `llama3.2:3b` (generation) |
+| External APIs | Semantic Scholar · CrossRef |
+| PDF export | fpdf2 |
+
+## Prerequisites
+
+1. **Ollama** running locally with the required models:
+   ```bash
+   ollama pull nomic-embed-text
+   ollama pull llama3.2:3b
+   ollama serve
+   ```
+
+2. **Google Cloud Firestore** — create a Firebase project, download a service-account key, and set:
+   ```
+   GOOGLE_CLOUD_PROJECT=your-project-id
+   GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json
+   ```
+
+3. **Python dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Running
+
+```bash
+cp .env.example .env   # fill in GOOGLE_CLOUD_PROJECT and GOOGLE_APPLICATION_CREDENTIALS
+uvicorn app.main:app --port 8000 --reload
+```
+
+Open `http://localhost:8000` — sign up, create a project, and start researching.
 
 ## Repo structure
 
 ```
 .
-├── rule.md                                  # Legal/compliance rules for AI agents (PDPA, Computer Crime Act, ETA)
+├── app/                        # FastAPI application
+│   ├── main.py
+│   ├── config.py               # SEARCH_LOW_CONFIDENCE_THRESHOLD and other constants
+│   ├── routers/                # auth, projects, search, library, outline, summary
+│   ├── services/               # search, citations, outline (RAG), summary, export
+│   ├── models/                 # Pydantic models (User, Project, SavedResource, Outline)
+│   └── templates/              # Jinja2 HTML templates (dark sidebar UI)
+├── requirements.txt
+├── rule.md                     # Legal/compliance rules (PDPA, CCA §26, ETA §9)
 └── .docs/
-    ├── 00-charter/
-    │   ├── project-charter.md                # Team project charter (purpose, objectives, scope, KPIs)
-    │   └── project-charter.docx              # Same charter, Word format for submission
-    ├── 00-proposal/
-    │   ├── proposal.md                      # Problem statement, target users, solution summary
-    │   ├── interview-plan.md                # User interview plan to validate pain points/direction
-    │   └── interview-script.md              # Moderator script: prototype walkthrough + questions, ready to run
-    ├── 01-requirements/
-    │   └── backlog.md                       # Full product backlog (epics, user stories, MoSCoW priority)
-    ├── 02-design/
-    │   ├── feature-list.md                  # Consolidated feature list by area
-    │   ├── user-journey.md                  # Key user journeys (A/B/C)
-    │   ├── prototype.md                     # What the clickable prototype demonstrates
-    │   ├── prototype.html                   # Static, no-backend clickable mockup — open directly in a browser
-    │   └── diagrams/
-    │       ├── 01-architecture-diagram.md   # System architecture (Mermaid)
-    │       ├── 02-er-diagram.md             # Entity-relationship diagram (Mermaid)
-    │       ├── 03-idea-search-sequence.md   # Idea → ranked papers sequence diagram
-    │       └── 04-proposal-generation-sequence.md  # Idea & outline generation (RAG) sequence diagram
-    └── 03-compliance/
-        └── legal-requirements.md            # rule.md's rules mapped to this app's specific features + gaps
+    ├── 00-charter/             # Project charter
+    ├── 00-proposal/            # Problem statement, interview plan/script
+    ├── 01-requirements/        # Backlog (MoSCoW) and spec files
+    ├── 02-design/              # Feature list, user journeys, diagrams, prototype
+    └── 03-compliance/          # Legal requirements mapped to features
 ```
-
-## Try the prototype
-
-`.docs/02-design/prototype.html` is a self-contained, static HTML mockup — no server, no dependencies. Open it directly in any browser to click through: sign up → create a project → search an idea → save results → generate a read-only outline → regenerate a section → see project isolation by creating a second project and deleting one without affecting the other.
 
 ## Key scope decisions
 
-- **Projects, not one big pile.** Every saved resource and generated outline belongs to a project the student creates. Deleting a project cascades only within itself — other projects are untouched.
-- **No in-app text editor.** The app generates a read-only scaffold — bullet-point ideas and short example passages per section, grounded in the project's saved sources — with Copy/Regenerate/Export actions. Writing the actual paper is explicitly the student's task, done in their own tool.
-- **IEEE by default.** Citations and the generated outline's structure (Title/Abstract/Index Terms/Roman-numeral sections/numbered references) default to IEEE style; APA/MLA/Chicago remain available.
-- **Local-only.** FastAPI + SQLite + Ollama (local embeddings + generation), all on `localhost`. "No third party" means no third-party identity provider and no external LLM API — not "no backend."
-
-Full rationale for each decision is in [proposal.md](.docs/00-proposal/proposal.md) and the backlog's scope-correction notes.
+- **Projects, not one big pile.** Every saved resource and generated outline belongs to a project. Deleting a project cascades only within itself.
+- **No in-app text editor.** The app produces a read-only scaffold with Copy/Regenerate/Export. Writing the actual paper is the student's task.
+- **IEEE by default.** Structure and citations default to IEEE; APA/MLA/Chicago are available.
+- **Local-only.** No third-party identity provider, no external LLM API.
 
 ## Compliance
 
-See [rule.md](rule.md) for the general legal rules (PDPA, Computer Crime Act §26, Electronic Transactions Act §9/26/28) and [legal-requirements.md](.docs/03-compliance/legal-requirements.md) for how they map to this app's specific features — including flagged gaps (account deletion, access-log middleware, consent recording) still to be added before real users onboard.
-
-## Implementation plan
-
-The approved technical plan (stack, data model, file structure, RAG pipeline, build order, and manual verification steps) is tracked separately from this repo's docs and is ready to execute:
-
-- **Stack**: Python + FastAPI, SQLite via SQLAlchemy, Jinja2 + htmx + vanilla JS, Ollama for local embeddings (`nomic-embed-text`) and generation (`llama3.2:3b`).
-- **Build order**: auth → projects CRUD → external API clients (Semantic Scholar, CrossRef) → Ollama smoke test → idea search pipeline → project-scoped library → citation formatting → outline generation (RAG) → per-section regeneration → copy/export → polish.
-- **Prerequisites**:
-  ```bash
-  ollama pull nomic-embed-text
-  ollama pull llama3.2:3b
-  pip install weasyprint   # HTML/CSS -> PDF for outline export
-  ```
-  Ollama must be running (`ollama serve`) whenever the backend runs.
+[rule.md](rule.md) covers PDPA, Computer Crime Act §26, and Electronic Transactions Act §9/26/28. [legal-requirements.md](.docs/03-compliance/legal-requirements.md) maps each rule to specific features, including flagged gaps (consent recording, access-log middleware) not yet implemented.
