@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from google.cloud import firestore
 
@@ -7,6 +7,7 @@ from app.database import get_db
 from app.dependencies import require_auth
 from app.exceptions import OllamaUnavailableError
 from app.models import User
+from app.services import export as export_service
 from app.services import outline as outline_service
 from app.services import projects as project_service
 from app.services.citations import STYLES
@@ -125,6 +126,52 @@ async def regenerate_section(
             "outline_id": outline_id,
         },
         status_code=422,
+    )
+
+
+@router.get("/projects/{project_id}/outlines/{outline_id}/export.md")
+async def export_markdown(
+    project_id: str,
+    outline_id: str,
+    user: User = Depends(require_auth),
+    db: firestore.Client = Depends(get_db),
+):
+    project = project_service.get_project(db, project_id)
+    if not project or project.user_id != user.id:
+        return RedirectResponse(url="/projects", status_code=303)
+    outline = outline_service.get_outline(db, project_id, outline_id)
+    if not outline:
+        return RedirectResponse(url=f"/projects/{project_id}", status_code=303)
+
+    md = export_service.render_markdown(project.name, outline)
+    slug = project.name[:40].replace(" ", "_").replace("/", "-")
+    return PlainTextResponse(
+        md,
+        headers={"Content-Disposition": f'attachment; filename="{slug}_outline.md"'},
+        media_type="text/markdown; charset=utf-8",
+    )
+
+
+@router.get("/projects/{project_id}/outlines/{outline_id}/export.pdf")
+async def export_pdf(
+    project_id: str,
+    outline_id: str,
+    user: User = Depends(require_auth),
+    db: firestore.Client = Depends(get_db),
+):
+    project = project_service.get_project(db, project_id)
+    if not project or project.user_id != user.id:
+        return RedirectResponse(url="/projects", status_code=303)
+    outline = outline_service.get_outline(db, project_id, outline_id)
+    if not outline:
+        return RedirectResponse(url=f"/projects/{project_id}", status_code=303)
+
+    pdf_bytes = export_service.render_pdf(project.name, outline)
+    slug = project.name[:40].replace(" ", "_").replace("/", "-")
+    return Response(
+        pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{slug}_outline.pdf"'},
     )
 
 

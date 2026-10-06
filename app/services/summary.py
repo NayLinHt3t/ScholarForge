@@ -32,20 +32,23 @@ def _resource_block(resources: list[SavedResource]) -> str:
 
 def _build_prompt(project_name: str, resources: list[SavedResource]) -> str:
     n = len(resources)
-    return f"""You are an academic writing assistant. Write a concise 150–300 word summary synthesising the key findings from the selected research papers listed below. Frame it around the research topic: "{project_name}".
+    return f"""You are an academic writing assistant. Your task: write a 150–300 word synthesis of the paper abstracts below.
 
-SELECTED RESOURCES — use ONLY citation numbers [1] through [{n}]:
+RESEARCH TOPIC: {project_name}
+
+PAPER ABSTRACTS (these are the source material — treat each abstract as the paper's content):
 
 {_resource_block(resources)}
 
-RULES:
-1. Every factual claim must carry an inline [N] citation referencing the source.
-2. Use only citation numbers [1] through [{n}]. Never invent a citation number.
-3. Write 150–300 words total.
-4. Do NOT include a reference list — write the summary body only.
-5. Write in clear academic prose. Do not use bullet points.
+TASK:
+Write a single cohesive paragraph (150–300 words) that synthesises the findings across these {n} paper(s).
+- Every claim you make must end with an inline citation in the form [N] where N matches the paper number above.
+- Use ONLY citation numbers [1] through [{n}].
+- Do NOT add a reference list — the body paragraph only.
+- Do NOT say you lack information. Use only what the abstracts provide.
+- Write in clear academic prose.
 
-Write the summary now:"""
+Begin your paragraph now:"""
 
 
 def _validate_citations(text: str, n_resources: int) -> list[str]:
