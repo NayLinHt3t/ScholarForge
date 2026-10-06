@@ -1,6 +1,14 @@
+import logging
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
 
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.exception_handlers import http_exception_handler as _default_http_handler

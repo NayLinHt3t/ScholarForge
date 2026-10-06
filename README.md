@@ -1,8 +1,18 @@
 # ScholarForge
 
-A local, account-based research assistant for students: describe a research idea in plain language, get back semantically relevant papers, save them into a project-scoped library with auto-formatted citations, and generate a read-only IEEE outline scaffold to kick-start writing — which stays the student's own task.
+**ScholarForge is a privacy-focused research assistant that uses semantic retrieval and locally hosted LLMs to help students discover, organize, summarize, and develop research ideas from academic sources while maintaining deterministic citation traceability.**
 
 No third-party login, no external LLM API. Everything runs on the student's own machine.
+
+### Engineering highlights
+- Semantic search with embedding-based cosine-similarity ranking
+- Project-scoped data isolation enforced at every API and database layer
+- Local LLM/RAG pipeline (Ollama — no external AI API)
+- Deterministic citation generation — LLM produces `[N]` markers only; the application owns numbering, metadata, and formatting
+- LLM output validation — every generated `[N]` marker is validated before persistence; invalid outputs are rejected with a retry path
+- Structured observability — search, embedding, ranking, and generation latencies logged per request
+- Prompt injection protection — retrieved paper abstracts are explicitly marked as data, not instructions, in every prompt
+- REST API architecture (FastAPI) with external API integration (Semantic Scholar, CrossRef)
 
 ## Features
 

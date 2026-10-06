@@ -1,11 +1,15 @@
 import asyncio
+import logging
 import math
+import time
 from dataclasses import dataclass, field
 
 from app.clients import crossref, ollama, semantic_scholar
 from app.config import SEARCH_LOW_CONFIDENCE_THRESHOLD, SEARCH_MAX_PER_SOURCE, SEARCH_TOP_K
 from app.exceptions import OllamaUnavailableError
 from app.models.search import SearchResult
+
+logger = logging.getLogger(__name__)
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
@@ -76,46 +80,66 @@ class SearchResponse:
 
 
 async def run(idea: str) -> SearchResponse:
+    t0 = time.perf_counter()
+
     if not await ollama.is_alive():
         raise OllamaUnavailableError()
 
+    t_api = time.perf_counter()
     ss_raw, cr_raw = await asyncio.gather(
         semantic_scholar.search(idea, limit=SEARCH_MAX_PER_SOURCE),
         crossref.search(idea, limit=SEARCH_MAX_PER_SOURCE),
         return_exceptions=True,
     )
+    api_ms = int((time.perf_counter() - t_api) * 1000)
 
     candidates: list[SearchResult] = []
     source_errors: list[str] = []
 
     if isinstance(ss_raw, Exception):
-        # Distinguish rate-limit (429) from genuine outage
         from httpx import HTTPStatusError
         if isinstance(ss_raw, HTTPStatusError) and ss_raw.response.status_code == 429:
             source_errors.append("Semantic Scholar (rate-limited — add SEMANTIC_SCHOLAR_API_KEY to .env for higher limits)")
+            logger.warning("search.api.rate_limited source=semantic_scholar")
         else:
             source_errors.append("Semantic Scholar")
+            logger.warning("search.api.error source=semantic_scholar error=%s", ss_raw)
     else:
         candidates.extend(_normalize_ss(ss_raw))
 
     if isinstance(cr_raw, Exception):
         source_errors.append("CrossRef")
+        logger.warning("search.api.error source=crossref error=%s", cr_raw)
     else:
         candidates.extend(_normalize_cr(cr_raw))
 
     if not candidates:
+        logger.info("search.no_candidates api_ms=%d sources_failed=%s", api_ms, source_errors)
         return SearchResponse(results=[], low_confidence=False, source_errors=source_errors)
 
+    t_embed = time.perf_counter()
     texts = [idea] + [f"{c.title}. {c.abstract or ''}" for c in candidates]
     embeddings = await asyncio.gather(*[ollama.embed(t) for t in texts])
+    embed_ms = int((time.perf_counter() - t_embed) * 1000)
 
+    t_rank = time.perf_counter()
     query_emb = embeddings[0]
     for candidate, emb in zip(candidates, embeddings[1:]):
         candidate.score = _cosine(query_emb, emb)
-
     candidates.sort(key=lambda c: c.score, reverse=True)
     top = candidates[:SEARCH_TOP_K]
+    rank_ms = int((time.perf_counter() - t_rank) * 1000)
 
     low_confidence = bool(top) and top[0].score < SEARCH_LOW_CONFIDENCE_THRESHOLD
+    total_ms = int((time.perf_counter() - t0) * 1000)
+
+    logger.info(
+        "search.ok candidates=%d top_k=%d top_score=%.3f low_confidence=%s "
+        "api_ms=%d embed_ms=%d rank_ms=%d total_ms=%d",
+        len(candidates), len(top),
+        top[0].score if top else 0.0,
+        low_confidence,
+        api_ms, embed_ms, rank_ms, total_ms,
+    )
 
     return SearchResponse(results=top, low_confidence=low_confidence, source_errors=source_errors)
