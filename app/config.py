@@ -1,4 +1,7 @@
+import os
+
 OLLAMA_BASE_URL: str = "http://localhost:11434"
+SEMANTIC_SCHOLAR_API_KEY: str = os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "")
 EMBED_MODEL: str = "nomic-embed-text"
 GENERATE_MODEL: str = "llama3.2:3b"
 

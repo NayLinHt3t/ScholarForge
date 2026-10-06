@@ -89,7 +89,12 @@ async def run(idea: str) -> SearchResponse:
     source_errors: list[str] = []
 
     if isinstance(ss_raw, Exception):
-        source_errors.append("Semantic Scholar")
+        # Distinguish rate-limit (429) from genuine outage
+        from httpx import HTTPStatusError
+        if isinstance(ss_raw, HTTPStatusError) and ss_raw.response.status_code == 429:
+            source_errors.append("Semantic Scholar (rate-limited — add SEMANTIC_SCHOLAR_API_KEY to .env for higher limits)")
+        else:
+            source_errors.append("Semantic Scholar")
     else:
         candidates.extend(_normalize_ss(ss_raw))
 

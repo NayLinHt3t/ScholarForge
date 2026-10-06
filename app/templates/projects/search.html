@@ -119,7 +119,10 @@ a.paper-title:hover { color: #3b82f6; }
 
   {% if source_errors %}
   <div class="alert alert-warning">
-    Could not reach: {{ source_errors | join(", ") }}. Showing results from the remaining source only.
+    {% for err in source_errors %}
+      <div>⚠ {{ err }}{% if not loop.last %};{% endif %}</div>
+    {% endfor %}
+    <div style="margin-top:4px;font-size:.8rem">Showing results from the remaining source only.</div>
   </div>
   {% endif %}
 
