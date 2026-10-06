@@ -109,6 +109,30 @@ a.paper-title:hover { color: #3b82f6; }
   {% if flash_duplicate %}
   <div class="alert alert-warning">That paper is already in your library.</div>
   {% endif %}
+  {% if request.query_params.get("url_error") %}
+  <div class="alert alert-error">
+    {% if request.query_params.get("url_error") == "invalid" %}
+      Could not find a Semantic Scholar paper ID in that URL. Paste the full paper URL, e.g. <code>https://www.semanticscholar.org/paper/…/&lt;40-char-id&gt;</code>
+    {% elif request.query_params.get("url_error") == "notfound" %}
+      Paper not found on Semantic Scholar.
+    {% else %}
+      Could not fetch the paper — check your connection and try again.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:.8rem;color:#64748b;white-space:nowrap">
+      <strong style="color:#0f172a">Add by URL</strong> — paste a Semantic Scholar paper link:
+    </span>
+    <form method="post" action="/projects/{{ project.id }}/search/add-by-url"
+          style="display:flex;gap:8px;flex:1;min-width:280px">
+      <input type="url" name="paper_url" required
+             placeholder="https://www.semanticscholar.org/paper/…"
+             style="flex:1;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:.85rem;outline:none;min-width:0">
+      <button type="submit" class="btn btn-primary btn-sm">Add</button>
+    </form>
+  </div>
 
   {% if ollama_down %}
   <div class="alert alert-error">
