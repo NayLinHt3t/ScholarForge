@@ -203,12 +203,9 @@ def _save(
 
 
 def list_outlines(db: firestore.Client, project_id: str) -> list[Outline]:
-    docs = (
-        _outlines_ref(db, project_id)
-        .order_by("created_at", direction=firestore.Query.DESCENDING)
-        .get()
-    )
-    return [Outline.from_firestore(doc) for doc in docs]
+    docs = _outlines_ref(db, project_id).get()
+    outlines = [Outline.from_firestore(doc) for doc in docs]
+    return sorted(outlines, key=lambda o: o.created_at, reverse=True)
 
 
 def get_outline(db: firestore.Client, project_id: str, outline_id: str) -> Outline | None:

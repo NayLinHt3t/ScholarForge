@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from google.cloud import firestore
 
 from app.collections import OUTLINES, PROJECTS, SAVED_RESOURCES
@@ -15,15 +17,25 @@ def list_projects(db: firestore.Client, user_id: str) -> list[Project]:
     docs = (
         db.collection(PROJECTS)
         .where(filter=firestore.FieldFilter("user_id", "==", user_id))
-        .order_by("created_at", direction=firestore.Query.DESCENDING)
         .get()
     )
-    return [Project.from_firestore(doc) for doc in docs]
+    projects = [Project.from_firestore(doc) for doc in docs]
+    return sorted(projects, key=lambda p: p.created_at, reverse=True)
 
 
 def get_project(db: firestore.Client, project_id: str) -> Project | None:
     doc = db.collection(PROJECTS).document(project_id).get()
     return Project.from_firestore(doc) if doc.exists else None
+
+
+def update_citation_style(db: firestore.Client, project_id: str, style: str) -> None:
+    from app.services.citations import STYLES
+    if style not in STYLES:
+        return
+    db.collection(PROJECTS).document(project_id).update({
+        "citation_style": style,
+        "updated_at": datetime.now(timezone.utc),
+    })
 
 
 def delete_project(db: firestore.Client, project_id: str) -> None:

@@ -13,9 +13,37 @@
   .resource-title { font-weight: 600; font-size: .9rem; color: #111827; }
   a.resource-title:hover { color: #2563eb; text-decoration: underline; }
   .resource-meta { font-size: .78rem; color: #6b7280; margin-top: 3px; }
-  .resource-actions { margin-top: 8px; }
+  .resource-citation {
+    font-size: .78rem; color: #374151; margin-top: 6px;
+    font-style: italic; line-height: 1.5;
+  }
+  .resource-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+
+  .section-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+  }
+  .section-toolbar h2 { margin: 0; }
+
+  .style-selector {
+    display: flex; align-items: center; gap: 8px;
+    font-size: .85rem; color: #374151;
+  }
+  .style-selector select {
+    padding: 5px 10px;
+    border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: .85rem; background: #fff; cursor: pointer;
+  }
 
   .banner-success { background: #f0fdf4; border: 1px solid #86efac; color: #166534; }
+
+  .copy-btn {
+    background: none; border: 1px solid #d1d5db; border-radius: 5px;
+    padding: 3px 9px; font-size: .75rem; cursor: pointer; color: #374151;
+  }
+  .copy-btn:hover { background: #f3f4f6; }
+
+  .lib-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 </style>
 {% endblock %}
 
@@ -61,9 +89,27 @@
 
   <!-- Saved Resources -->
   <div class="section-block">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <h2 style="margin:0">Saved Resources ({{ resources | length }})</h2>
-      <a class="btn-sm btn-primary" href="/projects/{{ project.id }}/search">+ Search for papers</a>
+    <div class="section-toolbar">
+      <h2>Saved Resources ({{ resources | length }})</h2>
+      <div class="lib-actions">
+        <div class="style-selector">
+          <label for="cite-style-select">Style:</label>
+          <select id="cite-style-select" onchange="onStyleChange(this.value)">
+            {% for s in citation_styles %}
+            <option value="{{ s }}"{% if s == project.citation_style %} selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% if resources %}
+        <a class="btn-sm btn-outline"
+           href="/projects/{{ project.id }}/library/export.bib"
+           style="font-size:.78rem">Export all BibTeX</a>
+        <a class="btn-sm btn-outline"
+           href="/projects/{{ project.id }}/summarize"
+           style="font-size:.78rem">Summarize sources</a>
+        {% endif %}
+        <a class="btn-sm btn-primary" href="/projects/{{ project.id }}/search">+ Search for papers</a>
+      </div>
     </div>
 
     {% if resources %}
@@ -84,8 +130,11 @@
               {% if r.year %} · {{ r.year }}{% endif %}
               {% if r.venue %} · <em>{{ r.venue }}</em>{% endif %}
             </div>
+            <div class="resource-citation" id="citation-{{ r.id }}">
+              {{ resource_citations[r.id][project.citation_style] }}
+            </div>
           </div>
-          <div class="resource-actions" style="flex-shrink:0">
+          <div style="flex-shrink:0">
             <form method="post" action="/projects/{{ project.id }}/library/{{ r.id }}/delete">
               <button type="submit" class="btn-sm btn-outline"
                       style="color:#dc2626;border-color:#fca5a5;font-size:.78rem">
@@ -93,6 +142,12 @@
               </button>
             </form>
           </div>
+        </div>
+        <div class="resource-actions">
+          <button class="copy-btn"
+                  onclick="copyCitation('{{ r.id }}')">Copy citation</button>
+          <button class="copy-btn"
+                  onclick="copyBibtex({{ resource_bibtex[r.id] | tojson }})">Copy BibTeX</button>
         </div>
       </div>
       {% endfor %}
@@ -121,7 +176,7 @@
         <select name="citation_style"
                 style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:.9rem;background:#fff">
           {% for s in citation_styles %}
-          <option value="{{ s }}" {% if s == "IEEE" %}selected{% endif %}>{{ s }}</option>
+          <option value="{{ s }}"{% if s == project.citation_style %} selected{% endif %}>{{ s }}</option>
           {% endfor %}
         </select>
       </div>
@@ -162,4 +217,29 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+const allCitations = {{ resource_citations | tojson }};
+
+function onStyleChange(style) {
+  for (const [rid, styleMap] of Object.entries(allCitations)) {
+    const el = document.getElementById('citation-' + rid);
+    if (el) el.textContent = styleMap[style] || '';
+  }
+  fetch('/projects/{{ project.id }}/style', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'style=' + encodeURIComponent(style),
+  });
+}
+
+function copyCitation(rid) {
+  const el = document.getElementById('citation-' + rid);
+  if (el) navigator.clipboard.writeText(el.textContent.trim());
+}
+
+function copyBibtex(bib) {
+  navigator.clipboard.writeText(bib);
+}
+</script>
 {% endblock %}

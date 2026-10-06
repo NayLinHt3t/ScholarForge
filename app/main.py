@@ -12,6 +12,7 @@ from app.routers import library as library_router
 from app.routers import outline as outline_router
 from app.routers import projects as projects_router
 from app.routers import search as search_router
+from app.routers import summary as summary_router
 
 app = FastAPI(title="ScholarForge")
 app.include_router(auth_router.router)
@@ -19,6 +20,7 @@ app.include_router(projects_router.router)
 app.include_router(search_router.router)
 app.include_router(library_router.router)
 app.include_router(outline_router.router)
+app.include_router(summary_router.router)
 
 
 @app.exception_handler(HTTPException)

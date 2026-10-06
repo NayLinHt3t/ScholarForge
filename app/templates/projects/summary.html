@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Summarize Sources — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block head %}
+<style>
+  .source-checklist {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 16px;
+  }
+  .source-check-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb; border-radius: 7px;
+    background: #fafafa; cursor: pointer;
+  }
+  .source-check-item:hover { background: #f0f9ff; border-color: #bfdbfe; }
+  .source-check-item input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; }
+  .source-check-label { font-size: .875rem; color: #111827; }
+  .source-check-meta { font-size: .75rem; color: #6b7280; margin-top: 2px; }
+
+  .summary-box {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin-top: 24px;
+  }
+  .summary-heading {
+    font-size: 1rem; font-weight: 700; color: #111827; margin-bottom: 12px;
+    border-bottom: 1px solid #f3f4f6; padding-bottom: 8px;
+  }
+  .summary-body {
+    font-size: .9rem; line-height: 1.7; color: #374151; white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .summary-references {
+    margin-top: 16px; padding-top: 12px; border-top: 1px solid #e5e7eb;
+    font-size: .8rem; color: #6b7280; white-space: pre-wrap;
+  }
+  .summary-actions { display: flex; gap: 10px; margin-top: 14px; }
+
+  .banner-error   { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+  .banner-warning { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="nav">
+  <a class="nav-brand" href="/projects">ScholarForge</a>
+  <div class="nav-right">
+    <a href="/projects/{{ project.id }}" style="color:#6b7280">{{ project.name }}</a>
+    <span>{{ user.email }}</span>
+    <form method="post" action="/auth/logout">
+      <button class="btn-sm btn-outline" type="submit">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="container">
+  <a class="back-link" href="/projects/{{ project.id }}">← {{ project.name }}</a>
+  <div class="page-header">
+    <h1 class="page-title">Summarize Sources</h1>
+  </div>
+
+  {% if ollama_down %}
+  <div class="banner banner-error" style="margin-bottom:18px">
+    <strong>The local AI engine (Ollama) is not running.</strong>
+    Start Ollama with <code>ollama serve</code> and try again.
+  </div>
+  {% endif %}
+
+  {% if invalid_markers %}
+  <div class="banner banner-warning" style="margin-bottom:18px">
+    The generated summary contained invalid citation markers
+    ({{ invalid_markers | join(", ") }}) and was discarded.
+    Try again — the model will produce a different result.
+  </div>
+  {% endif %}
+
+  {% if error is defined and error %}
+  <div class="banner banner-warning" style="margin-bottom:18px">{{ error }}</div>
+  {% endif %}
+
+  {% if not resources %}
+  <p class="section-placeholder">
+    No resources saved yet.
+    <a href="/projects/{{ project.id }}/search">Search for papers</a> to add some first.
+  </p>
+  {% else %}
+  <form method="post" action="/projects/{{ project.id }}/summarize">
+    <p style="font-size:.875rem;color:#374151;margin-bottom:12px">
+      Select the sources you want to summarize. The summary will be grounded only in the papers you choose.
+    </p>
+
+    <div class="source-checklist" id="source-checklist">
+      {% for r in resources %}
+      <label class="source-check-item">
+        <input type="checkbox" name="resource_ids" value="{{ r.id }}"
+               {% if selected_ids is defined and r.id in selected_ids %}checked{% endif %}
+               onchange="updateBtn()">
+        <div>
+          <div class="source-check-label">{{ r.title }}</div>
+          <div class="source-check-meta">
+            {% if r.authors %}{{ r.authors[:2] | join(", ") }}{% if r.authors | length > 2 %} et al.{% endif %}{% endif %}
+            {% if r.year %} · {{ r.year }}{% endif %}
+          </div>
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+
+    <button id="summarize-btn" type="submit" class="btn btn-primary"
+            {% if not (selected_ids is defined and selected_ids) %}disabled{% endif %}>
+      Summarize selected
+    </button>
+  </form>
+
+  {% if result and result.success %}
+  <div class="summary-box">
+    <div class="summary-heading">{{ project.name }}</div>
+    <div class="summary-body" id="summary-body">{{ result.text }}</div>
+    <div class="summary-references" id="summary-refs">{{ result.references }}</div>
+    <div class="summary-actions">
+      <button class="btn-sm btn-primary" onclick="copySummary()">Copy summary</button>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+</div>
+
+<script>
+function updateBtn() {
+  const checked = document.querySelectorAll('#source-checklist input[type="checkbox"]:checked');
+  document.getElementById('summarize-btn').disabled = checked.length === 0;
+}
+
+function copySummary() {
+  const heading = {{ project.name | tojson }};
+  const body = document.getElementById('summary-body').textContent.trim();
+  const refs = document.getElementById('summary-refs').textContent.trim();
+  const text = heading + '\n\n' + body + (refs ? '\n\n' + refs : '');
+  navigator.clipboard.writeText(text);
+}
+</script>
+{% endblock %}

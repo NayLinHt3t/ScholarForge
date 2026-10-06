@@ -53,12 +53,9 @@ def save_resource(
 
 
 def list_resources(db: firestore.Client, project_id: str) -> list[SavedResource]:
-    docs = (
-        _saved_ref(db, project_id)
-        .order_by("added_at", direction=firestore.Query.DESCENDING)
-        .get()
-    )
-    return [SavedResource.from_firestore(doc) for doc in docs]
+    docs = _saved_ref(db, project_id).get()
+    resources = [SavedResource.from_firestore(doc) for doc in docs]
+    return sorted(resources, key=lambda r: r.added_at, reverse=True)
 
 
 def get_resource(db: firestore.Client, project_id: str, resource_id: str) -> SavedResource | None:

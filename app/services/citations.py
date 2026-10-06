@@ -1,3 +1,5 @@
+import re
+
 from app.models import SavedResource
 
 STYLES = ("IEEE", "APA", "MLA", "Chicago")
@@ -96,3 +98,54 @@ def build_bibliography(resources: list[SavedResource], style: str = "IEEE") -> s
         number = i if style.upper() == "IEEE" else None
         lines.append(format_one(r, style, number))
     return "\n".join(lines)
+
+
+# ── BibTeX export ──────────────────────────────────────────────────────────────
+
+def _bibtex_escape(s: str) -> str:
+    return (s.replace('\\', '\\\\')
+             .replace('{', r'\{')
+             .replace('}', r'\}')
+             .replace('&', r'\&')
+             .replace('%', r'\%')
+             .replace('#', r'\#')
+             .replace('_', r'\_')
+             .replace('^', r'\^')
+             .replace('~', r'\~'))
+
+
+def _bibtex_key(r: SavedResource, index: int, seen: set[str]) -> str:
+    first = r.authors[0].strip() if r.authors else ""
+    last = re.sub(r'[^a-zA-Z]', '', first.split()[-1]) if first else ""
+    year = str(r.year) if r.year else "nd"
+    base = (last or "ref") + year
+    key, suffix = base, ord('a')
+    while key in seen:
+        key = base + chr(suffix)
+        suffix += 1
+    seen.add(key)
+    return key
+
+
+def format_bibtex(r: SavedResource, index: int = 1, seen: set[str] | None = None) -> str:
+    if seen is None:
+        seen = set()
+    key = _bibtex_key(r, index, seen)
+    fields = []
+    if r.authors:
+        fields.append(f"  author  = {{{_bibtex_escape(' and '.join(r.authors))}}}")
+    fields.append(f"  title   = {{{_bibtex_escape(r.title)}}}")
+    if r.year:
+        fields.append(f"  year    = {{{r.year}}}")
+    if r.venue:
+        fields.append(f"  journal = {{{_bibtex_escape(r.venue)}}}")
+    if r.doi:
+        fields.append(f"  doi     = {{{_bibtex_escape(r.doi)}}}")
+    elif r.url:
+        fields.append(f"  url     = {{{_bibtex_escape(r.url)}}}")
+    return "@article{" + key + ",\n" + ",\n".join(fields) + "\n}"
+
+
+def build_bibtex_all(resources: list[SavedResource]) -> str:
+    seen: set[str] = set()
+    return "\n\n".join(format_bibtex(r, i, seen) for i, r in enumerate(resources, 1))
