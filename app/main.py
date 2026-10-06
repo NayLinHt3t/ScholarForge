@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.exception_handlers import http_exception_handler as _default_http_handler
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.templating import Jinja2Templates
 
 from app.routers import auth as auth_router
 from app.routers import library as library_router
@@ -23,6 +24,7 @@ from app.routers import search as search_router
 from app.routers import summary as summary_router
 
 app = FastAPI(title="ScholarForge")
+_templates = Jinja2Templates(directory="app/templates")
 app.include_router(auth_router.router)
 app.include_router(projects_router.router)
 app.include_router(search_router.router)
@@ -41,3 +43,8 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 @app.get("/")
 async def root():
     return RedirectResponse(url="/auth/login", status_code=303)
+
+
+@app.get("/terms")
+async def terms(request: Request):
+    return _templates.TemplateResponse("terms.html", {"request": request})

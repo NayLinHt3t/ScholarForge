@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service — ScholarForge{% endblock %}
+
+{% block layout %}
+<div class="auth-page" style="align-items:flex-start;padding:40px 20px">
+  <div class="auth-box" style="max-width:680px">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">SF</div>
+      <div class="auth-brand-name">ScholarForge</div>
+    </div>
+
+    <div class="auth-card" style="text-align:left">
+      <div class="auth-card-title" style="margin-bottom:4px">Terms of Service</div>
+      <p style="font-size:.78rem;color:#94a3b8;margin-bottom:24px">Version 1.0 — effective from the date you create your account</p>
+
+      <div style="font-size:.875rem;line-height:1.8;color:#374151">
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:0 0 8px">1. What ScholarForge is</h3>
+        <p>ScholarForge is a local research-assistance tool that helps you find, organise, and develop ideas from academic papers. It runs entirely on your own machine. All AI inference (embeddings and text generation) is performed by Ollama locally — no paper content, generated text, or personal data is sent to any external AI service.</p>
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:16px 0 8px">2. What ScholarForge is not</h3>
+        <p>ScholarForge generates read-only outline scaffolds and summaries as a starting aid. It does not write your paper for you. All generated content is clearly labeled as a draft. You are responsible for reviewing, revising, and citing any content before submission. Submitting AI-generated text without disclosure may violate your institution's academic integrity policy — ScholarForge does not circumvent or advise on those policies.</p>
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:16px 0 8px">3. Data we store</h3>
+        <p>We store your email address (hashed password), the projects you create, the papers you save, the outlines and summaries you generate, and a record of your consent to these terms. All data is stored in your linked Google Cloud Firestore database under your own account. We do not share your data with third parties.</p>
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:16px 0 8px">4. Paper metadata</h3>
+        <p>Search queries are sent to Semantic Scholar and CrossRef to retrieve paper metadata (titles, abstracts, authors). These are public academic databases. Paper abstracts displayed in the app are sourced from those APIs under their respective terms of use.</p>
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:16px 0 8px">5. Your rights (PDPA)</h3>
+        <p>You may delete your account at any time from the account settings page. Deleting your account permanently removes all your projects, saved resources, and generated outlines. Consent records are retained as required by law (ETA §9) even after account deletion.</p>
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:16px 0 8px">6. Access logging (CCA §26)</h3>
+        <p>In accordance with the Computer Crime Act §26, ScholarForge logs account creation and deletion actions (timestamp, source IP, user ID, action type). These logs are retained for at least 90 days and are not used for any purpose other than security and compliance.</p>
+
+        <h3 style="font-size:.9rem;font-weight:700;color:#0f172a;margin:16px 0 8px">7. No warranty</h3>
+        <p>ScholarForge is provided as-is for educational use. Generated outlines and summaries may contain errors or inaccuracies. Always verify citations and content independently before relying on them.</p>
+
+      </div>
+
+      <div class="auth-footer" style="margin-top:24px">
+        <a href="/auth/signup">← Back to sign up</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
