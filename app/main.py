@@ -17,16 +17,30 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.routers import auth as auth_router
+from app.routers import claims as claims_router
+from app.routers import evidence as evidence_router
 from app.routers import library as library_router
+from app.routers import notes as notes_router
 from app.routers import outline as outline_router
 from app.routers import projects as projects_router
 from app.routers import search as search_router
+from app.routers import sources as sources_router
 from app.routers import summary as summary_router
+from app.routers import themes as themes_router
+from app.routers import workspace_outline as workspace_outline_router
 
 app = FastAPI(title="ScholarForge")
 _templates = Jinja2Templates(directory="app/templates")
 app.include_router(auth_router.router)
 app.include_router(projects_router.router)
+# workspace MVP routes (order matters: more specific paths first)
+app.include_router(sources_router.router)
+app.include_router(evidence_router.router)
+app.include_router(notes_router.router)
+app.include_router(themes_router.router)
+app.include_router(claims_router.router)
+app.include_router(workspace_outline_router.router)
+# legacy / P1 routes (kept functional, demoted from nav)
 app.include_router(search_router.router)
 app.include_router(library_router.router)
 app.include_router(outline_router.router)

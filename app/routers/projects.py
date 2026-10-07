@@ -37,6 +37,7 @@ async def projects_list(
 async def create_project(
     request: Request,
     name: str = Form(...),
+    research_question: str = Form(default=""),
     user: User = Depends(require_auth),
     db: firestore.Client = Depends(get_db),
 ):
@@ -48,7 +49,7 @@ async def create_project(
             {"request": request, "user": user, "projects": projects, "error": "Project name cannot be empty."},
             status_code=400,
         )
-    project_service.create_project(db, user.id, name)
+    project_service.create_project(db, user.id, name, research_question=research_question)
     return RedirectResponse(url="/projects", status_code=303)
 
 
@@ -56,44 +57,39 @@ async def create_project(
 async def project_detail(
     project_id: str,
     request: Request,
-    saved: str = "",
-    duplicate: str = "",
-    ollama_down: str = "",
-    gen_error: str = "",
     user: User = Depends(require_auth),
     db: firestore.Client = Depends(get_db),
 ):
     project = project_service.get_project(db, project_id)
     if not project or project.user_id != user.id:
         return RedirectResponse(url="/projects", status_code=303)
-    resources = library_service.list_resources(db, project_id)
-    outlines = outline_service.list_outlines(db, project_id)
-
-    # Pre-render citations in all styles for instant JS style switching
-    resource_citations = {}
-    resource_bibtex = {}
-    for r in resources:
-        resource_citations[r.id] = {s: format_one(r, s) for s in CITATION_STYLES}
-        seen: set[str] = set()
-        resource_bibtex[r.id] = format_bibtex(r, 1, seen)
-
+    counts = project_service.get_dashboard_counts(db, project_id)
     return templates.TemplateResponse(
         "projects/detail.html",
         {
             "request": request,
             "user": user,
             "project": project,
-            "resources": resources,
-            "outlines": outlines,
-            "citation_styles": CITATION_STYLES,
-            "resource_citations": resource_citations,
-            "resource_bibtex": resource_bibtex,
-            "flash_saved": bool(saved),
-            "flash_duplicate": bool(duplicate),
-            "flash_ollama_down": bool(ollama_down),
-            "flash_gen_error": bool(gen_error),
+            "counts": counts,
         },
     )
+
+
+@router.post("/{project_id}/edit")
+async def edit_project(
+    project_id: str,
+    name: str = Form(...),
+    research_question: str = Form(default=""),
+    user: User = Depends(require_auth),
+    db: firestore.Client = Depends(get_db),
+):
+    project = project_service.get_project(db, project_id)
+    if not project or project.user_id != user.id:
+        return RedirectResponse(url="/projects", status_code=303)
+    name = name.strip()
+    if name:
+        project_service.update_project(db, project_id, name=name, research_question=research_question)
+    return RedirectResponse(url=f"/projects/{project_id}", status_code=303)
 
 
 @router.post("/{project_id}/style")

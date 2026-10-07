@@ -22,10 +22,11 @@
 
 .new-project-form {
   background: white; border: 1px solid #e2e8f0; border-radius: 10px;
-  padding: 18px 20px; display: flex; gap: 10px; align-items: flex-end;
-  margin-bottom: 20px;
+  padding: 18px 20px; margin-bottom: 20px;
 }
-.new-project-form .field { margin: 0; flex: 1; }
+.new-project-form .form-row { display: flex; gap: 10px; align-items: flex-end; }
+.new-project-form .field { margin-bottom: 10px; }
+.new-project-form .form-row .field { margin-bottom: 0; flex: 1; }
 {% endblock %}
 
 {% block sidebar_nav %}
@@ -51,18 +52,19 @@
   {% endif %}
 
   <div class="new-project-form">
-    <div class="field">
-      <label for="new-project-input">Project name</label>
-      <input id="new-project-input" name="name" form="new-project-form"
-             type="text" maxlength="255" placeholder="e.g. Thesis: Remote Work &amp; Team Trust">
-    </div>
     <form id="new-project-form" method="post" action="/projects">
-      <input name="name" type="hidden">
+      <div class="field">
+        <label for="new-project-input">Project name <span style="color:#dc2626">*</span></label>
+        <input id="new-project-input" name="name"
+               type="text" maxlength="255" placeholder="e.g. Thesis: Remote Work &amp; Team Trust" required>
+      </div>
+      <div class="field">
+        <label>Research question <span class="text-muted">(optional)</span></label>
+        <input type="text" name="research_question" maxlength="500"
+               placeholder="e.g. How does social media affect political polarization?">
+      </div>
+      <button class="btn btn-primary btn-sm" type="submit">Create project</button>
     </form>
-    <button class="btn btn-primary btn-sm" type="submit" form="new-project-form"
-            onclick="document.querySelector('#new-project-form input[name=name]').value=document.getElementById('new-project-input').value">
-      Create
-    </button>
   </div>
 
   {% if projects %}
@@ -87,14 +89,4 @@
   {% endif %}
 </div>
 
-<script>
-// Submit new-project form properly when Enter pressed in input
-document.getElementById('new-project-input').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    document.querySelector('#new-project-form input[name=name]').value = this.value;
-    document.getElementById('new-project-form').submit();
-  }
-});
-</script>
 {% endblock %}

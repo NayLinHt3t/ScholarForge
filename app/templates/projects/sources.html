@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Sources — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block styles %}
+.source-card { background:white; border:1px solid #e2e8f0; border-radius:9px; padding:14px 16px; margin-bottom:10px; }
+.source-title { font-weight:600; font-size:.88rem; color:#0f172a; }
+a.source-title:hover { color:#3b82f6; }
+.source-meta { font-size:.73rem; color:#94a3b8; margin-top:3px; }
+.source-footer { display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.status-badge { display:inline-flex; align-items:center; padding:2px 9px; border-radius:20px; font-size:.7rem; font-weight:500; }
+.status-unread { background:#f1f5f9; color:#475569; }
+.status-reading { background:#dbeafe; color:#1d4ed8; }
+.status-done { background:#dcfce7; color:#15803d; }
+.ev-count { font-size:.72rem; color:#64748b; }
+.add-form { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:20px 22px; margin-bottom:24px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+@media (max-width:640px) { .form-row { grid-template-columns:1fr; } }
+{% endblock %}
+
+{% block sidebar_nav %}{% set nav_active = 'sources' %}{% include "projects/_project_nav.html" %}{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <div class="breadcrumb">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Sources</span>
+  </div>
+</div>
+
+<div class="page-body">
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+  {# ── Add source form ── #}
+  <div class="add-form">
+    <div class="section-title" style="margin-bottom:16px">Add a Source</div>
+    <form method="post" action="/projects/{{ project.id }}/sources">
+      <div class="field">
+        <label>Title <span style="color:#dc2626">*</span></label>
+        <input type="text" name="title" placeholder="Full paper or book title" required>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Authors <span class="text-muted">(comma-separated)</span></label>
+          <input type="text" name="authors_raw" placeholder="Jane Smith, John Doe">
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <input type="text" name="year" placeholder="2023" maxlength="4">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Venue / Journal / Publisher</label>
+          <input type="text" name="venue" placeholder="Nature, Oxford University Press…">
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select name="source_type">
+            {% for t in source_types %}
+            <option value="{{ t }}">{{ t.replace('_',' ').title() }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>DOI <span class="text-muted">(optional)</span></label>
+          <input type="text" name="doi" placeholder="10.1000/xyz123">
+        </div>
+        <div class="field">
+          <label>URL <span class="text-muted">(optional)</span></label>
+          <input type="text" name="url" placeholder="https://…">
+        </div>
+      </div>
+      <div class="field">
+        <label>Abstract <span class="text-muted">(optional)</span></label>
+        <textarea name="abstract" rows="3" placeholder="Paste or type the abstract…"></textarea>
+      </div>
+      <div class="field">
+        <label>Access status</label>
+        <select name="access_status">
+          {% for s in access_statuses %}
+          <option value="{{ s }}">{{ s.replace('_',' ').title() }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Add source</button>
+    </form>
+  </div>
+
+  {# ── Source list ── #}
+  <div class="section-header">
+    <div class="section-title">
+      Sources
+      <span class="section-count">{{ sources | length }}</span>
+    </div>
+  </div>
+
+  {% if sources %}
+  {% for s in sources %}
+  <div class="source-card">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <a class="source-title" href="/projects/{{ project.id }}/sources/{{ s.id }}">{{ s.title }}</a>
+        <div class="source-meta">
+          {% if s.authors %}{{ s.authors[:3] | join(", ") }}{% if s.authors | length > 3 %} et al.{% endif %}{% endif %}
+          {% if s.year %} · {{ s.year }}{% endif %}
+          {% if s.venue %} · <em>{{ s.venue }}</em>{% endif %}
+          · {{ s.source_type.replace('_',' ').title() }}
+        </div>
+      </div>
+      <form method="post" action="/projects/{{ project.id }}/sources/{{ s.id }}/delete"
+            onsubmit="return confirm('Remove this source and all its evidence?')">
+        <button type="submit" class="btn btn-ghost btn-xs" style="color:#dc2626;border-color:#fecaca" title="Remove">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+        </button>
+      </form>
+    </div>
+    <div class="source-footer">
+      <span class="status-badge status-{{ s.read_status }}">{{ s.read_status.capitalize() }}</span>
+      <span class="ev-count">
+        {% set cnt = ev_counts.get(s.id, 0) %}
+        {% if cnt == 0 %}<span style="color:#f59e0b">⚠ No evidence extracted</span>
+        {% else %}{{ cnt }} evidence item{{ 's' if cnt != 1 }}{% endif %}
+      </span>
+      {% if s.access_status == 'open_access' %}<span class="badge badge-green">Open access</span>
+      {% elif s.access_status == 'paywalled' %}<span class="badge badge-orange">Paywalled</span>
+      {% else %}<span class="badge badge-gray">Access unknown</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">📄</div>
+    <p>No sources yet. Add your first source using the form above.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

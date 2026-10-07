@@ -1,0 +1,35 @@
+# Spec: Search Quality — Result Cap, Low-Relevance Badge, Open-Access Status, and Pre-Generation Access Check
+
+> **File:** `.docs/01-requirements/01-spec/2026-10-03-14-search-quality-access.md`
+> **Date:** 2026-10-03
+> **Pain notes summary:** Four related gaps in search result quality and source reliability: (1) the re-ranked result list has no upper bound, so students may see an overwhelming number of cards; (2) low-scoring results are currently suppressed rather than labeled, denying students the ability to judge borderline papers themselves; (3) result cards and library cards carry no open-access signal, making it impossible to know before saving whether a paper is freely readable; (4) paywalled or access-unknown sources saved to the library can silently degrade summary and outline generation — students need a clear warning listing affected sources before generation runs.
+> **Open questions resolved:** 7 (Q1: cap applies to final displayed list only, re-ranker sees all candidates, default cap = 20; Q2: remove suppression entirely, threshold controls only the "try rephrasing" message, low-scoring cards get a "Low relevance" badge; Q3: show all results with open-access badge per card plus an "Open access only" toggle filter; Q4: papers with no DOI show "Access unknown" badge distinct from "Open access" and "Paywalled"; Q5: use only Semantic Scholar `isOpenAccess` + `openAccessPdf.url` fields for v1, CrossRef results always show "Access unknown", Unpaywall deferred to v2; Q6: add SRCH-FR-05 extending the result card SRCH-FR-03 to include the open-access status field; Q7: open-access badge and filter are Must priority)
+
+---
+
+## Functional Requirements
+
+| ID | As a… | I want to… | So that… | Priority | Acceptance Criteria | BL ref |
+|----|-------|------------|----------|----------|---------------------|--------|
+| SRCH-FR-05 | student | see an open-access status badge on every search result card and every saved library card | I can immediately tell whether a paper is freely readable before deciding to save or use it | Must | Every result card (SRCH-FR-03) and every saved library card (LIB-FR-01 / LIB-FR-03) displays exactly one of three badges: (a) **"Open access"** — shown when the source is Semantic Scholar and the paper's `isOpenAccess` field is `true` and `openAccessPdf.url` is non-null; (b) **"Paywalled"** — shown when the source is Semantic Scholar and `isOpenAccess` is `false`; (c) **"Access unknown"** — shown for all CrossRef-sourced results (CrossRef does not return `isOpenAccess`) and for any Semantic Scholar result where `isOpenAccess` is null or `openAccessPdf.url` is null while `isOpenAccess` is `true`; the badge is derived at search time from the API response and stored alongside the resource metadata when the resource is saved; no external Unpaywall API call is made in v1. | BL-51 |
+| SRCH-FR-06 | student | filter search results to show only open-access papers when I need freely readable sources | I can narrow a long result list to papers I can actually read without a subscription | Must | The search results view provides a clearly labeled "Open access only" toggle filter; when the toggle is active, only cards with the "Open access" badge (SRCH-FR-05) are displayed; cards with "Paywalled" or "Access unknown" badges are hidden; when the toggle is inactive, all result cards are shown regardless of badge; the toggle state is not persisted between searches — it resets to inactive on each new search; the result count indicator updates to reflect the filtered count while the toggle is active. | BL-52 |
+| RELY-FR-01 | student | see a clear pre-generation warning that lists every saved source in my project that cannot be confirmed as open-access, before summary or outline generation starts | I can make an informed decision about which sources to include rather than discovering a problem after generation has run | Must | Before the generation pipeline executes for both summarization (SUMM-FR-01 / SUMM-FR-02) and outline generation (GEN-FR-01 / GEN-FR-02): (a) the system inspects the access-status badge of every source selected for that generation run; (b) if any selected source has a "Paywalled" or "Access unknown" badge, the system displays a blocking warning modal before generation starts; (c) the modal lists every affected source by title and badge type (e.g. "Introduction to Machine Learning — Paywalled", "Survey of Neural Networks — Access unknown"); (d) the modal offers two actions: "Proceed anyway" (runs generation with all selected sources including non-open-access ones) and "Go back" (returns to source selection without running generation); (e) if all selected sources are "Open access", no warning is shown and generation starts immediately; (f) a source's access-status for this check is the badge value stored at save time (SRCH-FR-05) — no re-check is performed at generation time. | BL-53 |
+
+## Non-Functional Requirements
+
+| ID | Quality | Measure | Priority | BL ref |
+|----|---------|---------|----------|--------|
+| SRCH-NFR-04 | Result display cap | The final displayed list after re-ranking must contain at most 20 cards; the re-ranking pipeline may process any number of candidates from both APIs, but only the top-20 re-ranked results are passed to the UI; the cap value (20) must be defined as a single named configuration constant (e.g. `SEARCH_RESULT_DISPLAY_CAP = 20`) editable in one place without code changes elsewhere | Should | BL-54 |
+
+## Legal / Compliance Requirements
+
+*(No new legal requirements are triggered by this spec.)*
+
+- **SRCH-FR-05** reads `isOpenAccess` and `openAccessPdf.url` from Semantic Scholar responses that are already fetched by SRCH-FR-01. No new external API call is introduced. No new personal data field is collected. The access-status badge is bibliographic metadata, not personal data about the student.
+- **SRCH-FR-06** is a client-side filter over already-fetched, already-displayed result cards. It introduces no new data flow.
+- **RELY-FR-01** reads the stored `access_status` field from the `saved_resources` table. No new personal data is introduced. The generation action is a network-facing authenticated endpoint already covered by the logging middleware (COMP-FR-01 / COMP-LR-01) — no new logging obligation is added.
+- **SRCH-NFR-04** is a display-layer constraint on an existing pipeline. No new data is collected or transmitted.
+
+### Legal watch items
+
+- **RELY-LW-01** (PDPA): The `isOpenAccess` signal is sourced entirely from Semantic Scholar's API. If Semantic Scholar's field is inaccurate (e.g. a paper is marked open-access but access has since lapsed), students may generate from a source they cannot actually read, and the access-status stored in `saved_resources` will be stale. No legal obligation is triggered by this inaccuracy per se, but confirm with a human before v2 Unpaywall integration whether re-checking access status at generation time rather than save time is required to maintain PDPA data-accuracy obligations for the stored badge value.

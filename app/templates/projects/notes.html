@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Notes — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block styles %}
+.note-card { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:14px 16px; margin-bottom:10px; }
+.note-title { font-weight:600; font-size:.875rem; color:#0f172a; margin-bottom:4px; }
+.note-body { font-size:.85rem; color:#374151; line-height:1.65; white-space:pre-wrap; }
+.note-date { font-size:.7rem; color:#94a3b8; margin-top:6px; }
+.edit-form { display:none; margin-top:10px; }
+.edit-form.open { display:block; }
+{% endblock %}
+
+{% block sidebar_nav %}{% set nav_active = 'notes' %}{% include "projects/_project_nav.html" %}{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <div class="breadcrumb">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Notes</span>
+  </div>
+</div>
+
+<div class="page-body">
+  {# ── Add note form ── #}
+  <div class="card" style="margin-bottom:20px">
+    <div class="font-semibold text-sm mb-3">Add a note</div>
+    <form method="post" action="/projects/{{ project.id }}/notes">
+      <div class="field">
+        <label>Title <span class="text-muted">(optional)</span></label>
+        <input type="text" name="title" placeholder="Note title…">
+      </div>
+      <div class="field">
+        <label>Content <span style="color:#dc2626">*</span></label>
+        <textarea name="body" rows="4" placeholder="Your research notes, ideas, connections…" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Add note</button>
+    </form>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">
+      Notes
+      <span class="section-count">{{ notes | length }}</span>
+    </div>
+  </div>
+
+  {% if notes %}
+  {% for note in notes %}
+  <div class="note-card">
+    {% if note.title %}<div class="note-title">{{ note.title }}</div>{% endif %}
+    <p class="note-body">{{ note.body }}</p>
+    <div class="note-date">{{ note.created_at.strftime('%b %d, %Y') if note.created_at else '' }}</div>
+    <div class="flex gap-2 mt-3">
+      <button class="btn btn-ghost btn-xs" onclick="toggleEdit('{{ note.id }}')">Edit</button>
+      <form method="post" action="/projects/{{ project.id }}/notes/{{ note.id }}/delete" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-xs" style="color:#dc2626;border-color:#fecaca"
+                onclick="return confirm('Delete this note?')">Delete</button>
+      </form>
+    </div>
+    <form id="edit-{{ note.id }}" class="edit-form" method="post" action="/projects/{{ project.id }}/notes/{{ note.id }}/edit">
+      <div class="field mt-2">
+        <label>Title</label>
+        <input type="text" name="title" value="{{ note.title }}">
+      </div>
+      <div class="field">
+        <label>Content</label>
+        <textarea name="body" rows="4" required>{{ note.body }}</textarea>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('{{ note.id }}')">Cancel</button>
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">✏️</div>
+    <p>No notes yet.<br>Use the form above to capture your research ideas.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function toggleEdit(id) { document.getElementById('edit-' + id).classList.toggle('open'); }
+</script>
+{% endblock %}

@@ -3,12 +3,12 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 
 
-class Project(BaseModel):
+class Note(BaseModel):
     id: str = ""
+    project_id: str
     user_id: str
-    name: str
-    research_question: str = ""
-    citation_style: str = "IEEE"
+    title: str = ""
+    body: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -16,7 +16,7 @@ class Project(BaseModel):
         return self.model_dump(exclude={"id"})
 
     @classmethod
-    def from_firestore(cls, doc) -> "Project":
+    def from_firestore(cls, doc) -> "Note":
         data = doc.to_dict()
-        data.setdefault("research_question", "")
+        data.setdefault("title", "")
         return cls(id=doc.id, **data)

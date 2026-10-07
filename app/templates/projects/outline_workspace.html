@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Outline — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block styles %}
+.section-item { background:white; border:1px solid #e2e8f0; border-radius:9px; padding:14px 16px; margin-bottom:10px; }
+.section-num { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; background:#1d4ed8; color:white; border-radius:50%; font-size:.7rem; font-weight:700; flex-shrink:0; margin-right:8px; }
+.section-title-text { font-weight:600; font-size:.9rem; color:#0f172a; }
+a.section-title-text:hover { color:#3b82f6; }
+.section-notes { font-size:.8rem; color:#475569; margin-top:4px; line-height:1.5; }
+.section-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.chip { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:.7rem; font-weight:500; }
+.chip-claim { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.chip-ev { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+.reorder-btns { display:flex; flex-direction:column; gap:2px; }
+{% endblock %}
+
+{% block sidebar_nav %}{% set nav_active = 'outline' %}{% include "projects/_project_nav.html" %}{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <div class="breadcrumb">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Outline</span>
+  </div>
+  <div class="flex gap-2">
+    <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/export/outline.md">Export outline</a>
+    <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/export/full.md">Export full</a>
+  </div>
+</div>
+
+<div class="page-body">
+  {# ── Add section form ── #}
+  <div class="card" style="margin-bottom:20px">
+    <div class="font-semibold text-sm mb-3">Add outline section</div>
+    <form method="post" action="/projects/{{ project.id }}/outline/sections" style="display:flex;gap:10px;align-items:flex-end">
+      <div class="field" style="flex:1;margin-bottom:0">
+        <label>Section title <span style="color:#dc2626">*</span></label>
+        <input type="text" name="title" placeholder="Introduction, Background, Methodology…" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" style="flex-shrink:0">Add section</button>
+    </form>
+  </div>
+
+  {# ── Sections ── #}
+  <div class="section-header">
+    <div class="section-title">
+      Sections
+      <span class="section-count">{{ sections | length }}</span>
+    </div>
+  </div>
+
+  {% if sections %}
+  {% for sec in sections %}
+  <div class="section-item">
+    <div class="flex items-start gap-3">
+      <div class="reorder-btns">
+        {% if not loop.first %}
+        <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ sec.id }}/reorder" style="display:inline">
+          <input type="hidden" name="direction" value="up">
+          <button type="submit" class="btn btn-ghost btn-xs" style="padding:2px 6px" title="Move up">↑</button>
+        </form>
+        {% endif %}
+        {% if not loop.last %}
+        <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ sec.id }}/reorder" style="display:inline">
+          <input type="hidden" name="direction" value="down">
+          <button type="submit" class="btn btn-ghost btn-xs" style="padding:2px 6px" title="Move down">↓</button>
+        </form>
+        {% endif %}
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="section-num">{{ loop.index }}</span>
+          <a class="section-title-text" href="/projects/{{ project.id }}/outline/sections/{{ sec.id }}">{{ sec.title }}</a>
+        </div>
+        {% if sec.writing_notes %}<div class="section-notes">{{ sec.writing_notes }}</div>{% endif %}
+        {% if sec.claim_ids or sec.evidence_ids %}
+        <div class="section-chips">
+          {% for cid in sec.claim_ids %}
+          {% set c = claim_map.get(cid) %}
+          {% if c %}<span class="chip chip-claim">{{ c.statement[:40] }}{% if c.statement|length > 40 %}…{% endif %}</span>{% endif %}
+          {% endfor %}
+          {% for eid in sec.evidence_ids %}
+          {% set e = ev_map.get(eid) %}
+          {% if e %}<span class="chip chip-ev">"{{ e.quote[:35] }}{% if e.quote|length > 35 %}…{% endif %}"</span>{% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ sec.id }}/delete"
+            onsubmit="return confirm('Delete this section?')">
+        <button type="submit" class="btn btn-ghost btn-xs" style="color:#dc2626;border-color:#fecaca" title="Delete">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">📋</div>
+    <p>No sections yet.<br>Add your first outline section above.</p>
+  </div>
+  {% endif %}
+
+  {% if not claims %}
+  <div class="alert alert-info" style="margin-top:16px">
+    <div>No claims created yet. <a href="/projects/{{ project.id }}/claims" style="color:#1d4ed8;font-weight:600">Add claims</a> to link them to outline sections.</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

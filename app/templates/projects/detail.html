@@ -2,71 +2,25 @@
 {% block title %}{{ project.name }} — ScholarForge{% endblock %}
 
 {% block styles %}
-.resource-card {
-  background: white; border: 1px solid #e2e8f0; border-radius: 9px;
-  padding: 16px 18px; margin-bottom: 10px;
-  transition: border-color .13s;
+.dashboard-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px; margin-bottom: 28px;
 }
-.resource-card:hover { border-color: #bfdbfe; }
-.resource-title { font-weight: 600; font-size: .9rem; color: #0f172a; }
-a.resource-title:hover { color: #3b82f6; }
-.resource-meta { font-size: .75rem; color: #94a3b8; margin-top: 3px; }
-.resource-citation { font-size: .75rem; color: #64748b; margin-top: 7px; font-style: italic; line-height: 1.5; }
-.resource-footer { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-
-.outline-card {
-  background: white; border: 1px solid #e2e8f0; border-radius: 9px;
-  padding: 14px 18px; margin-bottom: 8px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+.dash-card {
+  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 18px 16px; text-align: center; text-decoration: none; color: inherit;
+  transition: border-color .13s, box-shadow .13s; display: block;
 }
-.outline-card-label { font-weight: 600; font-size: .875rem; color: #0f172a; }
-a.outline-card-label:hover { color: #3b82f6; }
-.outline-card-meta { font-size: .73rem; color: #94a3b8; margin-top: 3px; }
-
-.style-toolbar {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-.style-selector {
-  display: flex; align-items: center; gap: 6px; font-size: .78rem; color: #64748b;
-}
-.style-selector select {
-  padding: 4px 9px; border: 1px solid #e2e8f0; border-radius: 6px;
-  font-size: .78rem; background: white; cursor: pointer; width: auto;
-}
-
-.gen-form {
-  display: flex; gap: 10px; align-items: flex-end;
-  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px;
-  padding: 14px 16px; margin-bottom: 16px; flex-wrap: wrap;
-}
-.gen-form .field { margin: 0; }
-.gen-form select { padding: 7px 10px; width: auto; font-size: .82rem; }
+.dash-card:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,.12); }
+.dash-card-count { font-size: 2rem; font-weight: 800; color: #1d4ed8; line-height: 1; margin-bottom: 4px; }
+.dash-card-label { font-size: .78rem; color: #64748b; font-weight: 500; }
+.rq-text { font-size: .88rem; color: #475569; line-height: 1.6; margin-bottom: 8px; font-style: italic; }
+.edit-rq-btn { font-size: .75rem; color: #3b82f6; background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline; }
+.edit-rq-form { display: none; margin-top: 12px; }
+.edit-rq-form.open { display: block; }
 {% endblock %}
 
-{% block sidebar_nav %}
-<a href="/projects" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
-  All Projects
-</a>
-<hr class="nav-sep">
-<span class="nav-label">{{ project.name[:24] }}{% if project.name|length > 24 %}…{% endif %}</span>
-<a href="/projects/{{ project.id }}/search" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
-  Search Papers
-</a>
-<a href="/projects/{{ project.id }}" class="nav-item active">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
-  My Library
-</a>
-<a href="/projects/{{ project.id }}" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
-  Generate Outline
-</a>
-<a href="/projects/{{ project.id }}/summarize" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></svg>
-  Summarize Sources
-</a>
-{% endblock %}
+{% block sidebar_nav %}{% set nav_active = 'dashboard' %}{% include "projects/_project_nav.html" %}{% endblock %}
 
 {% block body %}
 <div class="topbar">
@@ -75,209 +29,95 @@ a.outline-card-label:hover { color: #3b82f6; }
     <span class="breadcrumb-sep">›</span>
     <span class="breadcrumb-current">{{ project.name }}</span>
   </div>
-  <a class="btn btn-ghost btn-sm"
-     href="/projects/{{ project.id }}/delete"
-     style="color:#dc2626;border-color:#fecaca;font-size:.75rem">
-    Delete project
-  </a>
+  <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/delete"
+     style="color:#dc2626;border-color:#fecaca;font-size:.75rem">Delete project</a>
 </div>
 
 <div class="page-body">
-  {% if flash_saved %}
-  <div class="alert alert-success">Paper saved to your library.</div>
-  {% endif %}
-  {% if flash_duplicate %}
-  <div class="alert alert-warning">That paper is already in your library.</div>
-  {% endif %}
-  {% if flash_ollama_down %}
-  <div class="alert alert-error">
-    <strong>Ollama is not running.</strong>&nbsp;
-    Start it with <code>ollama serve</code> and try again.
-  </div>
-  {% endif %}
-  {% if flash_gen_error %}
-  <div class="alert alert-error">
-    Could not generate outline. Make sure you have saved resources and Ollama is running.
-  </div>
-  {% endif %}
-
-  {# ── Library Section ── #}
-  <div style="margin-bottom:28px">
-    <div class="section-header">
-      <div class="section-title">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;color:#3b82f6"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
-        Saved Resources
-        <span class="section-count">{{ resources | length }}</span>
-      </div>
-      <div class="style-toolbar">
-        {% if resources %}
-        <div class="style-selector">
-          <label for="cite-style-select" style="margin:0;white-space:nowrap">Style:</label>
-          <select id="cite-style-select" onchange="onStyleChange(this.value)">
-            {% for s in citation_styles %}
-            <option value="{{ s }}"{% if s == project.citation_style %} selected{% endif %}>{{ s }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/library/export.bib">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-          Export .bib
-        </a>
-        <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/summarize">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></svg>
-          Summarize
-        </a>
-        {% endif %}
-        <a class="btn btn-primary btn-sm" href="/projects/{{ project.id }}/search">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          Search papers
-        </a>
-      </div>
+  {# ── Research Question ── #}
+  <div class="card" style="margin-bottom:24px">
+    <div class="flex items-center justify-between gap-3 mb-2">
+      <span class="font-bold" style="font-size:.9rem">Research Question</span>
+      <button class="edit-rq-btn" onclick="toggleRQForm()">Edit</button>
     </div>
-
-    {% if resources %}
-    {% for r in resources %}
-    <div class="resource-card">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
-          {% if r.url %}
-          <a class="resource-title" href="{{ r.url }}" target="_blank" rel="noopener">{{ r.title }}</a>
-          {% else %}
-          <span class="resource-title">{{ r.title }}</span>
-          {% endif %}
-          <div class="resource-meta">
-            {% if r.authors %}{{ r.authors[:3] | join(", ") }}{% if r.authors | length > 3 %} et al.{% endif %}{% endif %}
-            {% if r.year %} · {{ r.year }}{% endif %}
-            {% if r.venue %} · <em>{{ r.venue }}</em>{% endif %}
-          </div>
-          <div class="resource-citation" id="citation-{{ r.id }}">
-            {{ resource_citations[r.id][project.citation_style] }}
-          </div>
-        </div>
-        <form method="post" action="/projects/{{ project.id }}/library/{{ r.id }}/delete" style="flex-shrink:0">
-          <button type="submit" class="btn btn-ghost btn-xs"
-                  style="color:#dc2626;border-color:#fecaca"
-                  title="Remove from library">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
-          </button>
-        </form>
-      </div>
-      <div class="resource-footer">
-        <button class="btn btn-ghost btn-xs" onclick="copyCitation('{{ r.id }}')">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"/></svg>
-          Copy citation
-        </button>
-        <button class="btn btn-ghost btn-xs" onclick="copyBibtex({{ resource_bibtex[r.id] | tojson }})">
-          Copy BibTeX
-        </button>
-      </div>
-    </div>
-    {% endfor %}
-
+    {% if project.research_question %}
+    <p class="rq-text" id="rq-display">{{ project.research_question }}</p>
     {% else %}
-    <div class="card empty-state">
-      <div class="empty-icon">📄</div>
-      <p>No resources saved yet.</p>
-      <a class="btn btn-primary btn-sm" href="/projects/{{ project.id }}/search">Search for papers</a>
-    </div>
+    <p class="rq-text" id="rq-display" style="color:#94a3b8">Not set yet — click Edit to add your research question.</p>
     {% endif %}
-  </div>
-
-  {# ── Outlines Section ── #}
-  <div>
-    <div class="section-header">
-      <div class="section-title">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:16px;height:16px;color:#3b82f6"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
-        Generated Outlines
-        <span class="section-count">{{ outlines | length }}</span>
-      </div>
-    </div>
-
-    {% if resources %}
-    <div class="gen-form">
+    <form class="edit-rq-form" id="rq-form" method="post" action="/projects/{{ project.id }}/edit">
       <div class="field">
-        <label style="margin-bottom:4px">Citation style</label>
-        <select name="citation_style" form="gen-outline-form">
-          {% for s in citation_styles %}
-          <option value="{{ s }}"{% if s == project.citation_style %} selected{% endif %}>{{ s }}</option>
-          {% endfor %}
-        </select>
+        <input type="hidden" name="name" value="{{ project.name }}">
+        <input type="text" name="research_question"
+               value="{{ project.research_question }}"
+               placeholder="e.g. How does social media affect political polarization?">
       </div>
-      <form id="gen-outline-form" method="post" action="/projects/{{ project.id }}/outlines">
-        <input type="hidden" name="citation_style" id="gen-style-hidden" value="{{ project.citation_style }}">
-        <button class="btn btn-primary" type="submit">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
-          Generate outline
-        </button>
-      </form>
-    </div>
-    {% endif %}
-
-    {% if outlines %}
-    {% for o in outlines %}
-    <div class="outline-card">
-      <div>
-        <a class="outline-card-label" href="/projects/{{ project.id }}/outlines/{{ o.id }}">
-          {{ o.label or "Untitled outline" }}
-        </a>
-        <div class="outline-card-meta">
-          <span class="badge badge-blue" style="margin-right:6px">{{ o.citation_style }}</span>
-          {{ o.created_at.strftime("%b %d, %Y") }} · {{ o.cited_resource_ids | length }} source(s)
-        </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleRQForm()">Cancel</button>
       </div>
-      <form method="post" action="/projects/{{ project.id }}/outlines/{{ o.id }}/delete"
-            onsubmit="return confirm('Delete this outline?')">
-        <button type="submit" class="btn btn-ghost btn-xs"
-                style="color:#dc2626;border-color:#fecaca">Remove</button>
-      </form>
-    </div>
-    {% endfor %}
+    </form>
+  </div>
 
-    {% elif not resources %}
-    <div class="card empty-state">
-      <div class="empty-icon">✏️</div>
-      <p>Save some research papers first,<br>then generate your outline.</p>
+  {# ── Dashboard counts ── #}
+  <div class="dashboard-grid">
+    <a class="dash-card" href="/projects/{{ project.id }}/sources">
+      <div class="dash-card-count">{{ counts.sources }}</div>
+      <div class="dash-card-label">Sources</div>
+    </a>
+    <a class="dash-card" href="/projects/{{ project.id }}/evidence">
+      <div class="dash-card-count">{{ counts.evidence }}</div>
+      <div class="dash-card-label">Evidence</div>
+    </a>
+    <a class="dash-card" href="/projects/{{ project.id }}/notes">
+      <div class="dash-card-count">{{ counts.notes }}</div>
+      <div class="dash-card-label">Notes</div>
+    </a>
+    <a class="dash-card" href="/projects/{{ project.id }}/themes">
+      <div class="dash-card-count">{{ counts.themes }}</div>
+      <div class="dash-card-label">Themes</div>
+    </a>
+    <a class="dash-card" href="/projects/{{ project.id }}/claims">
+      <div class="dash-card-count">{{ counts.claims }}</div>
+      <div class="dash-card-label">Claims</div>
+    </a>
+    <a class="dash-card" href="/projects/{{ project.id }}/outline">
+      <div class="dash-card-count">{{ counts.sections }}</div>
+      <div class="dash-card-label">Outline sections</div>
+    </a>
+  </div>
+
+  {# ── Workflow guide ── #}
+  {% if counts.sources == 0 %}
+  <div class="alert alert-info">
+    <div>
+      <strong>Getting started:</strong> Begin by
+      <a href="/projects/{{ project.id }}/sources" style="color:#1d4ed8;font-weight:600">adding your sources</a>.
+      Then extract evidence from each one, group evidence into themes, form claims, and assemble your outline.
     </div>
-    {% else %}
-    <div class="card empty-state">
-      <div class="empty-icon">✏️</div>
-      <p>No outlines yet. Click <strong>Generate outline</strong> above to create one.</p>
+  </div>
+  {% endif %}
+
+  {# ── Export shortcuts ── #}
+  <div class="card" style="margin-top:24px">
+    <div class="section-title" style="margin-bottom:12px">Export</div>
+    <div class="flex gap-3 flex-wrap">
+      <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/export/full.md">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        Full research structure (.md)
+      </a>
+      <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/export/outline.md">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+        Outline scaffold (.md)
+      </a>
     </div>
-    {% endif %}
   </div>
 </div>
 
 <script>
-const allCitations = {{ resource_citations | tojson }};
-
-function onStyleChange(style) {
-  for (const [rid, styleMap] of Object.entries(allCitations)) {
-    const el = document.getElementById('citation-' + rid);
-    if (el) el.textContent = styleMap[style] || '';
-  }
-  // sync gen-outline hidden select
-  const h = document.getElementById('gen-style-hidden');
-  if (h) h.value = style;
-  // persist server-side
-  fetch('/projects/{{ project.id }}/style', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-    body: 'style=' + encodeURIComponent(style),
-  });
+function toggleRQForm() {
+  const form = document.getElementById('rq-form');
+  form.classList.toggle('open');
 }
-
-function copyCitation(rid) {
-  const el = document.getElementById('citation-' + rid);
-  if (el) navigator.clipboard.writeText(el.textContent.trim());
-}
-
-function copyBibtex(bib) {
-  navigator.clipboard.writeText(bib);
-}
-
-// Keep gen-form select in sync with library style select
-document.querySelector('.gen-form select')?.addEventListener('change', function() {
-  document.getElementById('gen-style-hidden').value = this.value;
-});
 </script>
 {% endblock %}

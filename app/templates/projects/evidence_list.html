@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Evidence — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block styles %}
+.ev-card { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:14px 16px; margin-bottom:10px; }
+.ev-quote { font-style:italic; color:#374151; font-size:.875rem; line-height:1.6; margin-bottom:6px; }
+.ev-meta { font-size:.72rem; color:#94a3b8; }
+.ev-note { font-size:.8rem; color:#475569; margin-top:6px; background:#f8fafc; border-radius:5px; padding:6px 10px; }
+.ev-source { font-size:.75rem; color:#3b82f6; font-weight:500; margin-top:4px; }
+{% endblock %}
+
+{% block sidebar_nav %}{% set nav_active = 'evidence' %}{% include "projects/_project_nav.html" %}{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <div class="breadcrumb">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">Evidence</span>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="section-header">
+    <div class="section-title">
+      All Evidence
+      <span class="section-count">{{ evidence_items | length }}</span>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/sources">Add from source</a>
+  </div>
+
+  {% if evidence_items %}
+  {% for ev in evidence_items %}
+  {% set src = source_map.get(ev.source_id) %}
+  <div class="ev-card">
+    <p class="ev-quote">"{{ ev.quote }}"</p>
+    {% if ev.page_reference %}<span class="ev-meta">{{ ev.page_reference }}</span>{% endif %}
+    {% if ev.student_note %}<div class="ev-note">{{ ev.student_note }}</div>{% endif %}
+    {% if src %}
+    <div class="ev-source">
+      <a href="/projects/{{ project.id }}/sources/{{ src.id }}" style="color:#3b82f6">{{ src.title[:60] }}{% if src.title|length > 60 %}…{% endif %}</a>
+    </div>
+    {% endif %}
+    <div class="flex gap-2 mt-2 flex-wrap">
+      <a class="btn btn-ghost btn-xs" href="/projects/{{ project.id }}/sources/{{ ev.source_id }}">View source</a>
+      <form method="post" action="/projects/{{ project.id }}/evidence/{{ ev.id }}/delete" style="display:inline">
+        <button type="submit" class="btn btn-ghost btn-xs" style="color:#dc2626;border-color:#fecaca"
+                onclick="return confirm('Delete this evidence item?')">Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">💬</div>
+    <p>No evidence extracted yet.<br>Open a <a href="/projects/{{ project.id }}/sources" style="color:#3b82f6">source</a> to extract evidence from it.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

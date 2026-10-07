@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ source.title }} — ScholarForge{% endblock %}
+
+{% block styles %}
+.ev-card { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:14px 16px; margin-bottom:10px; }
+.ev-quote { font-style:italic; color:#374151; font-size:.875rem; line-height:1.6; margin-bottom:6px; }
+.ev-meta { font-size:.72rem; color:#94a3b8; }
+.ev-note { font-size:.8rem; color:#475569; margin-top:6px; background:#f8fafc; border-radius:5px; padding:6px 10px; }
+.edit-form { display:none; margin-top:10px; }
+.edit-form.open { display:block; }
+{% endblock %}
+
+{% block sidebar_nav %}{% set nav_active = 'sources' %}{% include "projects/_project_nav.html" %}{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <div class="breadcrumb">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}/sources">Sources</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ source.title[:40] }}{% if source.title|length > 40 %}…{% endif %}</span>
+  </div>
+</div>
+
+<div class="page-body">
+  {# ── Source metadata ── #}
+  <div class="card" style="margin-bottom:20px">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px">{{ source.title }}</h2>
+        <div class="text-sm text-muted">
+          {% if source.authors %}{{ source.authors | join(", ") }}{% endif %}
+          {% if source.year %} · {{ source.year }}{% endif %}
+          {% if source.venue %} · <em>{{ source.venue }}</em>{% endif %}
+        </div>
+        {% if source.doi %}<div class="text-xs text-xxmuted mt-1">DOI: {{ source.doi }}</div>{% endif %}
+        {% if source.url %}<div class="text-xs mt-1"><a href="{{ source.url }}" target="_blank" rel="noopener" style="color:#3b82f6">{{ source.url }}</a></div>{% endif %}
+        {% if source.abstract %}
+        <details style="margin-top:10px">
+          <summary class="text-xs text-muted" style="cursor:pointer">Abstract</summary>
+          <p style="font-size:.8rem;color:#475569;margin-top:6px;line-height:1.6">{{ source.abstract }}</p>
+        </details>
+        {% endif %}
+        <div style="margin-top:10px">
+          <span class="badge {% if source.access_status == 'open_access' %}badge-green{% elif source.access_status == 'paywalled' %}badge-orange{% else %}badge-gray{% endif %}">
+            {{ source.access_status.replace('_',' ').title() }}
+          </span>
+          <span class="badge badge-blue" style="margin-left:6px">{{ source.source_type.replace('_',' ').title() }}</span>
+        </div>
+        <div class="text-xs text-muted mt-2">Citation: {{ citation }}</div>
+      </div>
+    </div>
+
+    {# Read status #}
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="text-sm font-semibold">Read status:</span>
+      <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/status" style="display:flex;gap:6px">
+        {% for s in read_statuses %}
+        <button type="submit" name="read_status" value="{{ s }}"
+                class="btn btn-sm {% if source.read_status == s %}btn-primary{% else %}btn-ghost{% endif %}">
+          {{ s.capitalize() }}
+        </button>
+        {% endfor %}
+      </form>
+    </div>
+
+    {# Source note #}
+    <div style="margin-top:14px">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-sm font-semibold">General note</span>
+        <button class="btn btn-ghost btn-xs" onclick="toggleNoteForm()">Edit</button>
+      </div>
+      {% if source.source_note %}
+      <p id="note-display" class="text-sm" style="color:#475569;background:#f8fafc;padding:8px 12px;border-radius:6px">{{ source.source_note }}</p>
+      {% else %}
+      <p id="note-display" class="text-xs text-xxmuted">No general note yet.</p>
+      {% endif %}
+      <form id="note-form" class="edit-form" method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/note">
+        <textarea name="source_note" rows="3" placeholder="Your thoughts about this source…">{{ source.source_note }}</textarea>
+        <div class="flex gap-2 mt-2">
+          <button type="submit" class="btn btn-primary btn-sm">Save note</button>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="toggleNoteForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ── Evidence ── #}
+  <div class="section-header">
+    <div class="section-title">
+      Evidence
+      <span class="section-count">{{ evidence_items | length }}</span>
+    </div>
+  </div>
+
+  {# Add evidence form #}
+  <div class="card" style="margin-bottom:16px">
+    <div class="font-semibold text-sm mb-3">Extract evidence from this source</div>
+    <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/evidence">
+      <div class="field">
+        <label>Quote / Extract <span style="color:#dc2626">*</span></label>
+        <textarea name="quote" rows="3" placeholder="Paste or type the exact quote or finding…" required></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>Page / Section reference</label>
+          <input type="text" name="page_reference" placeholder="p. 42, §3.2, Figure 5…">
+        </div>
+        <div class="field">
+          <label>Your note</label>
+          <input type="text" name="student_note" placeholder="What does this mean for your argument?">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm">Add evidence</button>
+    </form>
+  </div>
+
+  {% if evidence_items %}
+  {% for ev in evidence_items %}
+  <div class="ev-card">
+    <p class="ev-quote">"{{ ev.quote }}"</p>
+    {% if ev.page_reference %}<span class="ev-meta">{{ ev.page_reference }}</span>{% endif %}
+    {% if ev.student_note %}<div class="ev-note">{{ ev.student_note }}</div>{% endif %}
+    <div class="flex gap-2 mt-2 flex-wrap">
+      <button class="btn btn-ghost btn-xs" onclick="toggleEdit('{{ ev.id }}')">Edit</button>
+      <form method="post" action="/projects/{{ project.id }}/evidence/{{ ev.id }}/delete" style="display:inline">
+        <input type="hidden" name="source_id" value="{{ source.id }}">
+        <button type="submit" class="btn btn-ghost btn-xs" style="color:#dc2626;border-color:#fecaca"
+                onclick="return confirm('Delete this evidence item?')">Delete</button>
+      </form>
+    </div>
+    <form id="edit-{{ ev.id }}" class="edit-form" method="post" action="/projects/{{ project.id }}/evidence/{{ ev.id }}/edit">
+      <input type="hidden" name="source_id" value="{{ source.id }}">
+      <div class="field mt-2">
+        <label>Quote</label>
+        <textarea name="quote" rows="3" required>{{ ev.quote }}</textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field">
+          <label>Page reference</label>
+          <input type="text" name="page_reference" value="{{ ev.page_reference }}">
+        </div>
+        <div class="field">
+          <label>Your note</label>
+          <input type="text" name="student_note" value="{{ ev.student_note }}">
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('{{ ev.id }}')">Cancel</button>
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state">
+    <div class="empty-icon">💬</div>
+    <p>No evidence extracted yet.<br>Use the form above to add your first extract.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function toggleNoteForm() { document.getElementById('note-form').classList.toggle('open'); }
+function toggleEdit(id) { document.getElementById('edit-' + id).classList.toggle('open'); }
+</script>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ section.title }} — {{ project.name }} — ScholarForge{% endblock %}
+
+{% block styles %}
+.ev-row { background:white; border:1px solid #e2e8f0; border-radius:7px; padding:11px 14px; margin-bottom:8px; display:flex; align-items:flex-start; gap:12px; }
+.ev-row.linked { border-color:#15803d; background:#f0fdf4; }
+.ev-row-body { flex:1; min-width:0; }
+.ev-quote { font-style:italic; color:#374151; font-size:.85rem; line-height:1.6; }
+.ev-meta { font-size:.7rem; color:#94a3b8; margin-top:3px; }
+.ev-source-tag { font-size:.72rem; color:#3b82f6; margin-top:2px; }
+.claim-row { background:white; border:1px solid #e2e8f0; border-radius:7px; padding:10px 14px; margin-bottom:8px; display:flex; align-items:center; gap:12px; }
+.claim-row.linked { border-color:#1d4ed8; background:#eff6ff; }
+.edit-form { display:none; margin-top:10px; }
+.edit-form.open { display:block; }
+{% endblock %}
+
+{% block sidebar_nav %}{% set nav_active = 'outline' %}{% include "projects/_project_nav.html" %}{% endblock %}
+
+{% block body %}
+<div class="topbar">
+  <div class="breadcrumb">
+    <a href="/projects">My Projects</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/projects/{{ project.id }}/outline">Outline</a>
+    <span class="breadcrumb-sep">›</span>
+    <span class="breadcrumb-current">{{ section.title[:40] }}{% if section.title|length > 40 %}…{% endif %}</span>
+  </div>
+</div>
+
+<div class="page-body">
+  {# ── Section header ── #}
+  <div class="card" style="margin-bottom:20px">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1 min-w-0">
+        <h2 style="font-size:1rem;font-weight:700;margin-bottom:4px">{{ section.title }}</h2>
+        {% if section.writing_notes %}
+        <p class="text-sm" style="color:#475569;line-height:1.6">{{ section.writing_notes }}</p>
+        {% else %}
+        <p class="text-xs text-muted">No writing notes.</p>
+        {% endif %}
+        <p class="text-xs text-muted mt-2">{{ section.claim_ids | length }} claim{{ 's' if section.claim_ids | length != 1 }} · {{ section.evidence_ids | length }} evidence item{{ 's' if section.evidence_ids | length != 1 }}</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="toggleEdit()">Edit</button>
+    </div>
+    <form id="edit-section-form" class="edit-form" method="post" action="/projects/{{ project.id }}/outline/sections/{{ section.id }}/edit">
+      <div class="field mt-2">
+        <label>Title</label>
+        <input type="text" name="title" value="{{ section.title }}" required>
+      </div>
+      <div class="field">
+        <label>Writing notes</label>
+        <textarea name="writing_notes" rows="3" placeholder="Notes to guide your writing of this section…">{{ section.writing_notes }}</textarea>
+      </div>
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  {# ── Claims ── #}
+  <div class="section-header" style="margin-top:0">
+    <div class="section-title">Claims</div>
+  </div>
+  <p class="text-xs text-muted mb-3">Link claims that will be argued in this section.</p>
+
+  {% if all_claims %}
+  {% for claim in all_claims %}
+  {% set is_linked = claim.id in linked_claim_ids %}
+  <div class="claim-row {% if is_linked %}linked{% endif %}">
+    <div class="flex-1 min-w-0">
+      <span style="font-size:.875rem;font-weight:500;color:#0f172a">{{ claim.statement }}</span>
+      <div class="text-xs text-muted mt-1">{{ claim.evidence_ids | length }} evidence linked</div>
+    </div>
+    {% if is_linked %}
+    <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ section.id }}/unlink-claim">
+      <input type="hidden" name="claim_id" value="{{ claim.id }}">
+      <button type="submit" class="btn btn-sm btn-ghost" style="color:#dc2626;border-color:#fecaca">Unlink</button>
+    </form>
+    {% else %}
+    <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ section.id }}/link-claim">
+      <input type="hidden" name="claim_id" value="{{ claim.id }}">
+      <button type="submit" class="btn btn-sm btn-primary">Link</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state" style="padding:14px">
+    <p class="text-sm text-muted">No claims yet. <a href="/projects/{{ project.id }}/claims" style="color:#3b82f6">Create claims</a> first.</p>
+  </div>
+  {% endif %}
+
+  {# ── Evidence ── #}
+  <div class="section-header" style="margin-top:24px">
+    <div class="section-title">Direct Evidence</div>
+  </div>
+  <p class="text-xs text-muted mb-3">Link evidence to reference directly in this section (optional — evidence linked to claims is already tracked).</p>
+
+  {% if all_evidence %}
+  {% for ev in all_evidence %}
+  {% set is_linked = ev.id in linked_evidence_ids %}
+  {% set src = source_map.get(ev.source_id) %}
+  <div class="ev-row {% if is_linked %}linked{% endif %}">
+    <div class="ev-row-body">
+      <p class="ev-quote">"{{ ev.quote }}"</p>
+      {% if ev.page_reference %}<div class="ev-meta">{{ ev.page_reference }}</div>{% endif %}
+      {% if src %}<div class="ev-source-tag">{{ src.title[:55] }}{% if src.title|length > 55 %}…{% endif %}</div>{% endif %}
+    </div>
+    <div style="flex-shrink:0">
+      {% if is_linked %}
+      <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ section.id }}/unlink-evidence">
+        <input type="hidden" name="evidence_id" value="{{ ev.id }}">
+        <button type="submit" class="btn btn-sm btn-ghost" style="color:#dc2626;border-color:#fecaca">Unlink</button>
+      </form>
+      {% else %}
+      <form method="post" action="/projects/{{ project.id }}/outline/sections/{{ section.id }}/link-evidence">
+        <input type="hidden" name="evidence_id" value="{{ ev.id }}">
+        <button type="submit" class="btn btn-sm btn-primary">Link</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="card empty-state" style="padding:14px">
+    <p class="text-sm text-muted">No evidence yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function toggleEdit() { document.getElementById('edit-section-form').classList.toggle('open'); }
+</script>
+{% endblock %}

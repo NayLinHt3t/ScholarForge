@@ -20,15 +20,15 @@
 | ID | Quality | Measure | Priority | BL ref |
 |----|---------|---------|----------|--------|
 | GEN-NFR-01 | Section-regeneration isolation | After a per-section regeneration (GEN-FR-03), a byte-level comparison of every section other than the regenerated one must show no changes; the outline persistence layer must update only the targeted section row/field | Should | BL-46 |
-| AUTH-NFR-02 | Consent record immutability | The `consent_records` table must have no UPDATE or DELETE path reachable from application code outside a court-ordered legal-hold procedure; the account-deletion flow (AUTH-FR-05) must explicitly skip this table and leave consent records intact | Should | BL-47 |
+| AUTH-NFR-03 | Consent record immutability | The `consent_records` table must have no UPDATE or DELETE path reachable from application code outside a court-ordered legal-hold procedure; the account-deletion flow (AUTH-FR-05) must explicitly skip this table and leave consent records intact | Should | BL-47 |
 
 ## Legal / Compliance Requirements
 
 | ID | Law | Obligation | Concrete requirement | Applies to |
 |----|-----|------------|---------------------|------------|
-| AUTH-LR-01 | ETA §9 | Electronic consent evidence trail | ETA §9 requires that an electronic action indicating intention to approve a document use a method that can (a) identify the signatory and (b) demonstrate intention to approve; AUTH-FR-06 satisfies this by recording who (user_id), what (terms version string), when (UTC timestamp), and how (checkbox + form-submit event) — these four fields are the minimum evidence to demonstrate §9 identification + intention-to-approve if the consent record is ever contested | AUTH-FR-06, AUTH-NFR-02 |
-| AUTH-LR-02 | PDPA | Consent scope documentation | The version-string recorded in AUTH-FR-06 must correspond to a retrievable snapshot of the terms/privacy document so that the exact scope of data-processing purposes the user agreed to can be produced at audit or upon a data-subject access request; the document snapshot must be stored in a location not editable after the version is published | AUTH-FR-06 |
-| AUTH-LR-03 | CCA §26 | Signup-action logging | The signup action (account creation + consent checkbox event) must emit a standard access-log entry (timestamp UTC, source IP, newly created user_id, action = signup) via the logging middleware (COMP-FR-01) — the consent record in `consent_records` is distinct from and supplements the access log; both must be written | AUTH-FR-06 |
+| AUTH-LR-04 | ETA §9 | Electronic consent evidence trail | ETA §9 requires that an electronic action indicating intention to approve a document use a method that can (a) identify the signatory and (b) demonstrate intention to approve; AUTH-FR-06 satisfies this by recording who (user_id), what (terms version string), when (UTC timestamp), and how (checkbox + form-submit event) — these four fields are the minimum evidence to demonstrate §9 identification + intention-to-approve if the consent record is ever contested | AUTH-FR-06, AUTH-NFR-03 |
+| AUTH-LR-05 | PDPA | Consent scope documentation | The version-string recorded in AUTH-FR-06 must correspond to a retrievable snapshot of the terms/privacy document so that the exact scope of data-processing purposes the user agreed to can be produced at audit or upon a data-subject access request; the document snapshot must be stored in a location not editable after the version is published | AUTH-FR-06 |
+| AUTH-LR-06 | CCA §26 | Signup-action logging | The signup action (account creation + consent checkbox event) must emit a standard access-log entry (timestamp UTC, source IP, newly created user_id, action = signup) via the logging middleware (COMP-FR-01) — the consent record in `consent_records` is distinct from and supplements the access log; both must be written | AUTH-FR-06 |
 
 ### Legal watch items
 
