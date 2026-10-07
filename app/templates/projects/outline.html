@@ -36,30 +36,7 @@
 .draft-callout-body { font-size: .855rem; color: #374151; font-style: italic; line-height: 1.65; }
 {% endblock %}
 
-{% block sidebar_nav %}
-<a href="/projects" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
-  All Projects
-</a>
-<hr class="nav-sep">
-<span class="nav-label">{{ project.name[:24] }}{% if project.name|length > 24 %}…{% endif %}</span>
-<a href="/projects/{{ project.id }}/search" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
-  Search Papers
-</a>
-<a href="/projects/{{ project.id }}" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></svg>
-  My Library
-</a>
-<a href="/projects/{{ project.id }}" class="nav-item active">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
-  Generate Outline
-</a>
-<a href="/projects/{{ project.id }}/summarize" class="nav-item">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></svg>
-  Summarize Sources
-</a>
-{% endblock %}
+{% block sidebar_nav %}{% set nav_active = 'outline' %}{% include "projects/_project_nav.html" %}{% endblock %}
 
 {% block body %}
 <div class="topbar">
@@ -107,6 +84,13 @@
   </div>
   {% endif %}
 
+  {% set edited_key = request.query_params.get("edited") %}
+  {% if edited_key %}
+  <div class="regen-banner">
+    ✓ Section saved: <strong>{{ section_names.get(edited_key, edited_key) }}</strong>
+  </div>
+  {% endif %}
+
   <div style="margin-bottom:20px">
     <h1 style="font-size:1.1rem;font-weight:800;color:#0f172a;margin-bottom:8px">
       {{ outline.label or "Generated Outline" }}
@@ -128,6 +112,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"/></svg>
             Copy
           </button>
+          <button class="btn btn-ghost btn-xs" onclick="toggleEdit('{{ key }}')">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z"/></svg>
+            Edit
+          </button>
           {% if key in regenerable %}
           <form method="post"
                 action="/projects/{{ project.id }}/outlines/{{ outline.id }}/sections/{{ key }}/regenerate"
@@ -141,6 +129,17 @@
         </div>
       </div>
       <div class="section-body" id="body-{{ key }}">{{ outline.sections[key] }}</div>
+      <div id="edit-form-{{ key }}" style="display:none;padding:0 18px 16px">
+        <form method="post"
+              action="/projects/{{ project.id }}/outlines/{{ outline.id }}/sections/{{ key }}/edit">
+          <textarea name="content" rows="8"
+                    style="width:100%;font-size:.855rem;line-height:1.75;border:1.5px solid #3b82f6;border-radius:6px;padding:8px 10px;resize:vertical;font-family:inherit;box-sizing:border-box">{{ outline.sections[key] }}</textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('{{ key }}')">Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
     {% endif %}
   {% endfor %}
@@ -150,6 +149,13 @@
 function copySection(key) {
   const el = document.getElementById('body-' + key);
   if (el) navigator.clipboard.writeText(el.textContent.trim());
+}
+function toggleEdit(key) {
+  const form = document.getElementById('edit-form-' + key);
+  const body = document.getElementById('body-' + key);
+  const showing = form.style.display !== 'none';
+  form.style.display = showing ? 'none' : 'block';
+  body.style.display = showing ? '' : 'none';
 }
 function copyAll() {
   navigator.clipboard.writeText({{ outline.content | tojson }});

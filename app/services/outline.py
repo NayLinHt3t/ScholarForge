@@ -11,6 +11,9 @@ from app.collections import OUTLINES, PROJECTS
 from app.exceptions import OllamaUnavailableError
 from app.models import Outline, SavedResource
 from app.services import citations, library
+from app.services import claims as claims_service
+from app.services import evidence as evidence_service
+from app.services import notes as notes_service
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +64,89 @@ def _resource_block(resources: list[SavedResource], abstract_chars: int = 200) -
         year = str(r.year) if r.year else "n.d."
         lines.append(f'[{i}] "{r.title}" — {authors} ({year})\n    {snippet}')
     return "\n\n".join(lines)
+
+
+def _workspace_block(claims, evidence, notes, resources: list[SavedResource]) -> str:
+    source_map = {r.id: r for r in resources}
+    parts: list[str] = []
+    if claims:
+        parts.append("CLAIMS (student's arguments):")
+        for i, c in enumerate(claims, 1):
+            parts.append(f"  {i}. {c.statement}")
+    if evidence:
+        parts.append("\nEVIDENCE (quotes from sources):")
+        for e in evidence:
+            src = source_map.get(e.source_id)
+            label = f'"{src.title}"' if src else "a source"
+            parts.append(f'  • From {label}: "{e.quote[:300]}"')
+            if e.student_note:
+                parts.append(f'    Note: {e.student_note}')
+    if notes:
+        parts.append("\nRESEARCH NOTES:")
+        for n in notes:
+            header = f"[{n.title}] " if getattr(n, "title", "") else ""
+            parts.append(f"  {header}{n.body[:300]}")
+    return "\n".join(parts)
+
+
+def _build_workspace_prompt(
+    resources: list[SavedResource],
+    claims,
+    evidence,
+    notes,
+) -> str:
+    n = len(resources)
+    ws = _workspace_block(claims, evidence, notes, resources)
+    return _INJECTION_GUARD + f"""You are an academic writing assistant. Generate a structured IEEE paper outline grounded in the student's research workspace.
+
+SAVED RESOURCES — use ONLY citation numbers [1] through [{n}]:
+
+{_resource_block(resources)}
+
+STUDENT WORKSPACE:
+{ws}
+
+RULES:
+1. Never use a citation number higher than {n} or lower than 1.
+2. Incorporate the student's claims, evidence, and notes to make the outline specific and relevant.
+3. Every section (abstract, introduction, related work, methodology, contribution) must include at least one [N] citation.
+4. Each body section has 2–3 bullet points followed by a DRAFT: passage of 2–4 sentences.
+5. Start the draft passage with the exact text "DRAFT: ".
+
+Output using EXACTLY these section markers and no others:
+
+[SECTION: title]
+(suggested paper title)
+
+[SECTION: abstract]
+(3–4 sentence abstract with [N] citations)
+
+[SECTION: index_terms]
+(5–8 comma-separated keywords)
+
+[SECTION: introduction]
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+DRAFT: (2–4 sentence draft with [N] citations)
+
+[SECTION: related_work]
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+DRAFT: (2–4 sentence draft with [N] citations)
+
+[SECTION: methodology]
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+DRAFT: (2–4 sentence draft with [N] citations)
+
+[SECTION: contribution]
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+- (bullet point with [N] citation)
+DRAFT: (2–4 sentence draft with [N] citations)"""
 
 
 def _build_full_prompt(resources: list[SavedResource]) -> str:
@@ -228,6 +314,29 @@ def delete_outline(db: firestore.Client, project_id: str, outline_id: str) -> No
     _outlines_ref(db, project_id).document(outline_id).delete()
 
 
+def update_section(
+    db: firestore.Client,
+    project_id: str,
+    outline_id: str,
+    section_key: str,
+    content: str,
+) -> None:
+    outline = get_outline(db, project_id, outline_id)
+    if not outline:
+        raise ValueError("Outline not found.")
+    if section_key not in SECTION_DISPLAY_NAMES:
+        raise ValueError(f"Unknown section '{section_key}'.")
+    updated_sections = dict(outline.sections)
+    updated_sections[section_key] = content.strip()
+    updated_content = _render_full_text(updated_sections)
+    now = datetime.now(timezone.utc)
+    _outlines_ref(db, project_id).document(outline_id).update({
+        f"sections.{section_key}": content.strip(),
+        "content": updated_content,
+        "updated_at": now,
+    })
+
+
 # ── generation pipeline ────────────────────────────────────────────────────────
 
 async def generate(
@@ -243,8 +352,17 @@ async def generate(
     if not await ollama.is_alive():
         raise OllamaUnavailableError()
 
+    all_claims = claims_service.list_claims(db, project_id)
+    all_evidence = evidence_service.list_evidence_for_project(db, project_id)
+    all_notes = notes_service.list_notes(db, project_id)
+
+    if all_claims or all_evidence or all_notes:
+        prompt = _build_workspace_prompt(resources, all_claims, all_evidence, all_notes)
+    else:
+        prompt = _build_full_prompt(resources)
+
     t_llm = time.perf_counter()
-    raw = await ollama.generate(_build_full_prompt(resources))
+    raw = await ollama.generate(prompt)
     llm_ms = int((time.perf_counter() - t_llm) * 1000)
 
     sections = _parse_sections(raw)

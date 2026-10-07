@@ -37,7 +37,6 @@
       </form>
       {% else %}
       <form method="post" action="/projects/{{ project.id }}/outlines">
-        <input type="hidden" name="citation_style" value="{{ citation_style or 'IEEE' }}">
         <button class="auth-submit" type="submit">Try again</button>
       </form>
       {% endif %}

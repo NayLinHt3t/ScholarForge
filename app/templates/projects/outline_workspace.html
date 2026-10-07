@@ -32,6 +32,22 @@ a.section-title-text:hover { color:#3b82f6; }
 </div>
 
 <div class="page-body">
+  {# ── Generate AI outline ── #}
+  <div class="card" style="margin-bottom:20px;background:#eff6ff;border-color:#bfdbfe">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <div class="font-semibold text-sm" style="color:#1d4ed8">Generate IEEE Outline</div>
+        <div class="text-xs" style="color:#64748b;margin-top:2px">Uses your claims, evidence, and notes to draft a full IEEE-format outline.</div>
+      </div>
+      <form method="post" action="/projects/{{ project.id }}/outlines">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
+          Generate
+        </button>
+      </form>
+    </div>
+  </div>
+
   {# ── Add section form ── #}
   <div class="card" style="margin-bottom:20px">
     <div class="font-semibold text-sm mb-3">Add outline section</div>

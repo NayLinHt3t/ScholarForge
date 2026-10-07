@@ -10,7 +10,6 @@ from app.models import User
 from app.services import export as export_service
 from app.services import outline as outline_service
 from app.services import projects as project_service
-from app.services.citations import STYLES
 from app.services.outline import REGENERABLE_SECTIONS, SECTION_DISPLAY_NAMES, SECTION_ORDER
 
 router = APIRouter(tags=["outline"])
@@ -21,7 +20,6 @@ templates = Jinja2Templates(directory="app/templates")
 async def generate_outline(
     project_id: str,
     request: Request,
-    citation_style: str = Form(default="IEEE"),
     user: User = Depends(require_auth),
     db: firestore.Client = Depends(get_db),
 ):
@@ -30,12 +28,12 @@ async def generate_outline(
         return RedirectResponse(url="/projects", status_code=303)
 
     try:
-        result = await outline_service.generate(db, project_id, citation_style)
+        result = await outline_service.generate(db, project_id, "IEEE")
     except OllamaUnavailableError:
         return RedirectResponse(
             url=f"/projects/{project_id}?ollama_down=1", status_code=303
         )
-    except ValueError as exc:
+    except ValueError:
         return RedirectResponse(
             url=f"/projects/{project_id}?gen_error=1", status_code=303
         )
@@ -45,7 +43,6 @@ async def generate_outline(
             url=f"/projects/{project_id}/outlines/{result.outline.id}", status_code=303
         )
 
-    # Citation validation failed — render error page, do not save
     return templates.TemplateResponse(
         "projects/outline_error.html",
         {
@@ -53,7 +50,6 @@ async def generate_outline(
             "user": user,
             "project": project,
             "invalid_markers": result.invalid_markers,
-            "citation_style": citation_style,
         },
         status_code=422,
     )
@@ -85,7 +81,6 @@ async def view_outline(
             "section_order": SECTION_ORDER,
             "section_names": SECTION_DISPLAY_NAMES,
             "regenerable": REGENERABLE_SECTIONS,
-            "styles": STYLES,
         },
     )
 
@@ -126,6 +121,28 @@ async def regenerate_section(
             "outline_id": outline_id,
         },
         status_code=422,
+    )
+
+
+@router.post("/projects/{project_id}/outlines/{outline_id}/sections/{section_key}/edit")
+async def edit_section(
+    project_id: str,
+    outline_id: str,
+    section_key: str,
+    content: str = Form(...),
+    user: User = Depends(require_auth),
+    db: firestore.Client = Depends(get_db),
+):
+    project = project_service.get_project(db, project_id)
+    if not project or project.user_id != user.id:
+        return RedirectResponse(url="/projects", status_code=303)
+    try:
+        outline_service.update_section(db, project_id, outline_id, section_key, content)
+    except ValueError:
+        pass
+    return RedirectResponse(
+        url=f"/projects/{project_id}/outlines/{outline_id}?edited={section_key}",
+        status_code=303,
     )
 
 
