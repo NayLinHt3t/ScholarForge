@@ -21,20 +21,38 @@ def _cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb)
 
 
+def _resolve_url(doi: str | None, arxiv_id: str | None, fallback: str | None) -> str | None:
+    """Prefer a stable resolver link over an aggregator/raw API url.
+
+    DOI resolves to the publisher's actual page; arXiv's abstract page always
+    has the full text. Both outlive and outrank whatever `url`/`URL` the
+    source API happened to return (semanticscholar.org paper pages are S2's
+    own landing page, not the real source; CrossRef's `URL` field is often
+    stale or missing).
+    """
+    if doi:
+        return f"https://doi.org/{doi}"
+    if arxiv_id:
+        return f"https://arxiv.org/abs/{arxiv_id}"
+    return fallback
+
+
 def _normalize_ss(items: list[dict]) -> list[SearchResult]:
     results = []
     for item in items:
         if not item.get("title"):
             continue
         ext = item.get("externalIds") or {}
+        doi = ext.get("DOI")
+        arxiv_id = ext.get("ArXiv")
         results.append(SearchResult(
             title=item["title"],
             authors=[a["name"] for a in (item.get("authors") or [])],
             year=item.get("year"),
             venue=item.get("venue") or None,
-            doi=ext.get("DOI"),
-            arxiv_id=ext.get("ArXiv"),
-            url=item.get("url"),
+            doi=doi,
+            arxiv_id=arxiv_id,
+            url=_resolve_url(doi, arxiv_id, item.get("url")),
             abstract=item.get("abstract"),
             source="semantic_scholar",
         ))
@@ -59,13 +77,14 @@ def _normalize_cr(items: list[dict]) -> list[SearchResult]:
                 year = parts[0][0]
                 break
         venues = item.get("container-title") or []
+        doi = item.get("DOI")
         results.append(SearchResult(
             title=titles[0],
             authors=authors,
             year=year,
             venue=venues[0] if venues else None,
-            doi=item.get("DOI"),
-            url=item.get("URL"),
+            doi=doi,
+            url=_resolve_url(doi, None, item.get("URL")),
             abstract=item.get("abstract"),
             source="crossref",
         ))
