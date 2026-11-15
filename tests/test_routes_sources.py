@@ -85,7 +85,8 @@ class TestSourceDetail:
             patch("app.routers.sources.project_service.get_project", return_value=FAKE_PROJECT),
             patch("app.routers.sources.library_service.get_resource", return_value=FAKE_SOURCE),
             patch("app.routers.sources.evidence_service.list_evidence_for_source", return_value=[]),
-            patch("app.routers.sources.format_one", return_value="Citation text"),
+            patch("app.routers.sources.format_apa", return_value="APA citation"),
+            patch("app.routers.sources.format_ieee", return_value="[1] IEEE citation"),
         ):
             resp = client.get("/projects/p1/sources/s1")
         assert resp.status_code == 200

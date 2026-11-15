@@ -26,6 +26,7 @@ class SavedResource(BaseModel):
     read_status: str = "unread"             # unread | reading | done
     source_note: str = ""                   # student's general note on this source
     access_status: str = "unknown"          # open_access | paywalled | unknown
+    ai_summary: str = ""                    # AI-generated plain-language summary
 
     def to_firestore(self) -> dict:
         return self.model_dump(exclude={"id"})
@@ -38,4 +39,5 @@ class SavedResource(BaseModel):
         data.setdefault("read_status", "unread")
         data.setdefault("source_note", "")
         data.setdefault("access_status", "unknown")
+        data.setdefault("ai_summary", "")
         return cls(id=doc.id, **data)

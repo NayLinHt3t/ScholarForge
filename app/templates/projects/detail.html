@@ -91,9 +91,11 @@
   {% if counts.sources == 0 %}
   <div class="alert alert-info">
     <div>
-      <strong>Getting started:</strong> Begin by
-      <a href="/projects/{{ project.id }}/sources" style="color:#1d4ed8;font-weight:600">adding your sources</a>.
-      Then extract evidence from each one, group evidence into themes, form claims, and assemble your outline.
+      <strong>Getting started:</strong>
+      <a href="/projects/{{ project.id }}/search" style="color:#1d4ed8;font-weight:600">Search for papers</a>
+      and save them as sources, then
+      <a href="/projects/{{ project.id }}/outline" style="color:#1d4ed8;font-weight:600">build your outline</a>.
+      Use the Research tools in the sidebar to extract evidence, notes, themes, and claims as you go deeper.
     </div>
   </div>
   {% endif %}

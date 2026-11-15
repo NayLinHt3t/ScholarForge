@@ -3,14 +3,16 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from google.cloud import firestore
 
+from app.clients import ollama
 from app.database import get_db
 from app.dependencies import require_auth
+from app.exceptions import OllamaUnavailableError
 from app.models import User
 from app.models.resource import ACCESS_STATUSES, READ_STATUSES, SOURCE_TYPES
 from app.services import library as library_service
 from app.services import projects as project_service
 from app.services import evidence as evidence_service
-from app.services.citations import STYLES as CITATION_STYLES, format_one
+from app.services.citations import format_apa, format_ieee
 
 router = APIRouter(prefix="/projects/{project_id}/sources", tags=["sources"])
 templates = Jinja2Templates(directory="app/templates")
@@ -129,14 +131,14 @@ async def source_detail(
     if not source:
         return RedirectResponse(url=f"/projects/{project_id}/sources", status_code=303)
     evidence_items = evidence_service.list_evidence_for_source(db, project_id, source_id)
-    citation = format_one(source, project.citation_style)
     return templates.TemplateResponse("projects/source_detail.html", {
         "request": request,
         "user": user,
         "project": project,
         "source": source,
         "evidence_items": evidence_items,
-        "citation": citation,
+        "citation_apa": format_apa(source),
+        "citation_ieee": format_ieee(source),
         "read_statuses": READ_STATUSES,
         "access_statuses": ACCESS_STATUSES,
         "source_types": SOURCE_TYPES,
@@ -172,6 +174,39 @@ async def update_source_note(
         return redir
     library_service.update_source(db, project_id, source_id, source_note=source_note.strip())
     return RedirectResponse(url=f"/projects/{project_id}/sources/{source_id}", status_code=303)
+
+
+@router.post("/{source_id}/summarize")
+async def summarize_source(
+    project_id: str,
+    source_id: str,
+    user: User = Depends(require_auth),
+    db: firestore.Client = Depends(get_db),
+):
+    project, redir = _guard(db, project_id, user)
+    if redir:
+        return redir
+    source = library_service.get_resource(db, project_id, source_id)
+    if not source:
+        return RedirectResponse(url=f"/projects/{project_id}/sources", status_code=303)
+
+    base = f"/projects/{project_id}/sources/{source_id}"
+    if not source.abstract:
+        return RedirectResponse(url=f"{base}?summary_error=no_abstract", status_code=303)
+
+    prompt = (
+        f"Summarize the following academic paper abstract in 3-4 plain sentences. "
+        f"Use simple, everyday language — avoid jargon. "
+        f"Focus on: what the paper is about, what problem it solves, and what it found.\n\n"
+        f"Title: {source.title}\n\nAbstract: {source.abstract}"
+    )
+    try:
+        summary = await ollama.generate(prompt)
+        library_service.update_source(db, project_id, source_id, ai_summary=summary.strip())
+    except OllamaUnavailableError:
+        return RedirectResponse(url=f"{base}?summary_error=ollama_down", status_code=303)
+
+    return RedirectResponse(url=base, status_code=303)
 
 
 @router.post("/{source_id}/delete")

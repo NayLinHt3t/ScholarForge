@@ -50,7 +50,7 @@ a.paper-title:hover { color: #3b82f6; }
   font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
 }
 .source-semantic_scholar { background: #ede9fe; color: #6d28d9; }
-.source-crossref         { background: #dcfce7; color: #15803d; }
+.source-openalex         { background: #dcfce7; color: #15803d; }
 {% endblock %}
 
 {% block sidebar_nav %}{% set nav_active = 'search' %}{% include "projects/_project_nav.html" %}{% endblock %}
@@ -158,7 +158,7 @@ a.paper-title:hover { color: #3b82f6; }
         {% endif %}
       </div>
       <span class="source-badge source-{{ r.source }}" style="flex-shrink:0;margin-top:2px">
-        {{ "Semantic Scholar" if r.source == "semantic_scholar" else "CrossRef" }}
+        {{ "Semantic Scholar" if r.source == "semantic_scholar" else "OpenAlex" }}
       </span>
     </div>
 

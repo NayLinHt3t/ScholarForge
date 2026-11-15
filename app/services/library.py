@@ -77,6 +77,7 @@ def update_source(
     read_status: str | None = None,
     source_note: str | None = None,
     access_status: str | None = None,
+    ai_summary: str | None = None,
 ) -> None:
     updates: dict = {}
     if title is not None:
@@ -101,6 +102,8 @@ def update_source(
         updates["source_note"] = source_note
     if access_status is not None:
         updates["access_status"] = access_status
+    if ai_summary is not None:
+        updates["ai_summary"] = ai_summary
     if updates:
         _saved_ref(db, project_id).document(resource_id).update(updates)
 
