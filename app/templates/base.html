@@ -1,305 +1,80 @@
+{% from "_ui.html" import icon %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}ScholarForge{% endblock %}</title>
-  <style>
-    /* ── Reset ───────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-           background: #f8fafc; color: #0f172a; min-height: 100vh; }
-    a { text-decoration: none; color: inherit; }
-    button { cursor: pointer; font-family: inherit; border: none; }
-
-    /* ── App sidebar layout ───────────────────────────────── */
-    .app-layout { display: flex; min-height: 100vh; }
-
-    .sidebar {
-      width: 232px; background: #0f172a;
-      display: flex; flex-direction: column; flex-shrink: 0;
-      position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 50;
-    }
-
-    /* Brand */
-    .sidebar-brand { padding: 18px 14px 14px; border-bottom: 1px solid #1e293b; }
-    .brand-logo { display: flex; align-items: center; gap: 10px; }
-    .brand-icon {
-      width: 38px; height: 38px;
-      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-      border-radius: 9px; display: flex; align-items: center; justify-content: center;
-      font-size: .85rem; font-weight: 800; color: white; flex-shrink: 0; letter-spacing: -.5px;
-    }
-    .brand-text .brand-name { font-size: .92rem; font-weight: 700; color: #f1f5f9; }
-    .brand-text .brand-tag { font-size: .65rem; color: #475569; margin-top: 1px; letter-spacing: .02em; }
-
-    /* Nav */
-    .sidebar-nav { padding: 12px 8px; flex: 1; }
-    .nav-label {
-      font-size: .65rem; font-weight: 600; color: #334155;
-      text-transform: uppercase; letter-spacing: .07em;
-      padding: 12px 10px 5px; display: block;
-    }
-    .nav-sep { border: none; border-top: 1px solid #1e293b; margin: 6px 8px 8px; }
-    .nav-item {
-      display: flex; align-items: center; gap: 9px;
-      padding: 8px 10px; border-radius: 7px;
-      color: #64748b; font-size: .83rem; font-weight: 500;
-      margin-bottom: 1px; transition: background .12s, color .12s;
-    }
-    .nav-item:hover { background: #1e293b; color: #cbd5e1; }
-    .nav-item.active { background: #172554; color: #60a5fa; }
-    .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
-    .nav-item.active svg { color: #60a5fa; }
-
-    /* Footer */
-    .sidebar-footer { padding: 10px 8px 14px; border-top: 1px solid #1e293b; }
-    .user-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 10px; margin-bottom: 6px;
-    }
-    .user-avatar {
-      width: 28px; height: 28px; background: #172554; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: .72rem; color: #60a5fa; font-weight: 700; flex-shrink: 0;
-    }
-    .user-email {
-      font-size: .75rem; color: #64748b;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;
-    }
-    .sidebar-logout {
-      width: 100%; padding: 7px 10px; border-radius: 6px;
-      background: none; border: 1px solid #1e293b;
-      color: #475569; font-size: .77rem; font-weight: 500;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      transition: all .12s; cursor: pointer;
-    }
-    .sidebar-logout:hover { background: #1e293b; color: #94a3b8; }
-    .sidebar-logout svg { width: 13px; height: 13px; }
-
-    /* ── Main content ────────────────────────────────────── */
-    .main-content { margin-left: 232px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-
-    .topbar {
-      background: white; border-bottom: 1px solid #e2e8f0;
-      height: 56px; padding: 0 28px;
-      display: flex; align-items: center; gap: 14px;
-      position: sticky; top: 0; z-index: 10; flex-shrink: 0;
-    }
-    .topbar-title { font-size: .98rem; font-weight: 700; color: #0f172a; flex: 1; }
-    .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: .82rem; flex: 1; }
-    .breadcrumb a { color: #64748b; }
-    .breadcrumb a:hover { color: #3b82f6; }
-    .breadcrumb-sep { color: #cbd5e1; font-size: .75rem; }
-    .breadcrumb-current { color: #0f172a; font-weight: 600; }
-
-    .page-body { padding: 24px 28px; flex: 1; }
-
-    /* ── Cards ───────────────────────────────────────────── */
-    .card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 22px; }
-
-    /* ── Buttons ─────────────────────────────────────────── */
-    .btn {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      padding: 8px 16px; border-radius: 7px;
-      font-size: .845rem; font-weight: 600; border: none;
-      transition: all .13s; cursor: pointer; white-space: nowrap;
-    }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-primary:hover { background: #2563eb; }
-    .btn-secondary { background: white; color: #374151; border: 1px solid #e2e8f0; }
-    .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
-    .btn-danger { background: #fff1f2; color: #dc2626; border: 1px solid #fecaca; }
-    .btn-danger:hover { background: #fee2e2; }
-    .btn-ghost { background: none; color: #374151; border: 1px solid #e2e8f0; }
-    .btn-ghost:hover { background: #f8fafc; }
-    .btn-sm { padding: 5px 11px; font-size: .77rem; border-radius: 6px; }
-    .btn-xs { padding: 3px 9px; font-size: .72rem; border-radius: 5px; }
-    .btn svg { width: 14px; height: 14px; }
-    .btn-sm svg { width: 13px; height: 13px; }
-
-    /* ── Form elements ───────────────────────────────────── */
-    input[type="text"], input[type="email"], input[type="password"], textarea, select {
-      width: 100%; padding: 9px 12px;
-      border: 1px solid #e2e8f0; border-radius: 7px;
-      font-size: .875rem; font-family: inherit;
-      background: white; color: #0f172a; outline: none;
-      transition: border-color .13s, box-shadow .13s;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59,130,246,.12);
-    }
-    label { font-size: .82rem; font-weight: 500; color: #374151; display: block; margin-bottom: 5px; }
-    .field { margin-bottom: 14px; }
-
-    /* ── Badges ──────────────────────────────────────────── */
-    .badge {
-      display: inline-flex; align-items: center;
-      padding: 2px 8px; border-radius: 20px;
-      font-size: .7rem; font-weight: 500; white-space: nowrap;
-    }
-    .badge-blue { background: #dbeafe; color: #1d4ed8; }
-    .badge-purple { background: #ede9fe; color: #6d28d9; }
-    .badge-green { background: #dcfce7; color: #15803d; }
-    .badge-gray { background: #f1f5f9; color: #475569; }
-    .badge-orange { background: #fff7ed; color: #c2410c; }
-
-    /* ── Alerts ──────────────────────────────────────────── */
-    .alert {
-      padding: 11px 15px; border-radius: 8px;
-      font-size: .845rem; margin-bottom: 16px;
-      display: flex; align-items: flex-start; gap: 10px;
-    }
-    .alert-success { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
-    .alert-error   { background: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; }
-    .alert-warning { background: #fffbeb; border: 1px solid #fcd34d; color: #b45309; }
-    .alert-info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
-
-    /* ── Section titles ──────────────────────────────────── */
-    .section-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 14px; gap: 12px; flex-wrap: wrap;
-    }
-    .section-title {
-      font-size: .9rem; font-weight: 700; color: #0f172a;
-      display: flex; align-items: center; gap: 7px;
-    }
-    .section-count {
-      font-size: .72rem; color: #94a3b8; font-weight: 500;
-      background: #f1f5f9; border-radius: 20px; padding: 1px 7px;
-    }
-    .empty-state {
-      text-align: center; padding: 36px 16px;
-      color: #94a3b8; font-size: .875rem;
-    }
-    .empty-state .empty-icon { font-size: 1.8rem; margin-bottom: 10px; }
-    .empty-state p { margin-bottom: 12px; line-height: 1.5; }
-    .empty-state a { color: #3b82f6; font-weight: 500; }
-
-    /* ── Auth layout (centered card, no sidebar) ─────────── */
-    .auth-page {
-      min-height: 100vh; background: #f8fafc;
-      display: flex; align-items: center; justify-content: center; padding: 24px;
-    }
-    .auth-box { width: 100%; max-width: 420px; }
-    .auth-brand { text-align: center; margin-bottom: 24px; }
-    .auth-brand-icon {
-      width: 48px; height: 48px; margin: 0 auto 12px;
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      font-size: 1.1rem; font-weight: 800; color: white; letter-spacing: -.5px;
-    }
-    .auth-brand-name { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
-    .auth-brand-tag  { font-size: .78rem; color: #64748b; margin-top: 3px; }
-    .auth-card {
-      background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px 32px;
-    }
-    .auth-card-title    { font-size: 1.05rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-    .auth-card-subtitle { font-size: .82rem; color: #64748b; margin-bottom: 22px; }
-    .auth-submit {
-      width: 100%; padding: 10px; border-radius: 7px;
-      background: #3b82f6; color: white; border: none;
-      font-size: .9rem; font-weight: 600; cursor: pointer;
-      transition: background .13s; margin-top: 4px;
-    }
-    .auth-submit:hover { background: #2563eb; }
-    .auth-submit.danger { background: #dc2626; }
-    .auth-submit.danger:hover { background: #b91c1c; }
-    .auth-footer { text-align: center; font-size: .82rem; color: #64748b; margin-top: 18px; }
-    .auth-footer a { color: #3b82f6; font-weight: 500; }
-    .auth-footer a:hover { text-decoration: underline; }
-    .auth-divider { text-align: center; color: #cbd5e1; font-size: .8rem; margin: 16px 0; }
-
-    /* checkbox row in signup */
-    .check-row {
-      display: flex; align-items: flex-start; gap: 9px;
-      margin-bottom: 18px; font-size: .82rem; color: #374151; line-height: 1.5;
-    }
-    .check-row input { margin-top: 2px; flex-shrink: 0; accent-color: #3b82f6; }
-    .check-row a { color: #3b82f6; }
-
-    /* ── Utility ─────────────────────────────────────────── */
-    .flex { display: flex; }
-    .flex-col { flex-direction: column; }
-    .items-center { align-items: center; }
-    .items-start { align-items: flex-start; }
-    .justify-between { justify-content: space-between; }
-    .flex-wrap { flex-wrap: wrap; }
-    .flex-1 { flex: 1; }
-    .min-w-0 { min-width: 0; }
-    .gap-1 { gap: 4px; }
-    .gap-2 { gap: 8px; }
-    .gap-3 { gap: 12px; }
-    .gap-4 { gap: 16px; }
-    .text-xs   { font-size: .72rem; }
-    .text-sm   { font-size: .82rem; }
-    .text-muted { color: #64748b; }
-    .text-xxmuted { color: #94a3b8; }
-    .font-semibold { font-weight: 600; }
-    .font-bold { font-weight: 700; }
-    .mt-1 { margin-top: 4px; }
-    .mt-2 { margin-top: 8px; }
-    .mt-3 { margin-top: 12px; }
-    .mt-4 { margin-top: 16px; }
-    .mt-6 { margin-top: 24px; }
-    .mb-1 { margin-bottom: 4px; }
-    .mb-2 { margin-bottom: 8px; }
-    .mb-4 { margin-bottom: 16px; }
-    .w-full { width: 100%; }
-    .overflow-hidden { overflow: hidden; }
-    .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    {% block styles %}{% endblock %}
-  </style>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>{% block styles %}{% endblock %}</style>
   {% block head %}{% endblock %}
+  <!-- section: {% block active_nav %}{% endblock %} -->
 </head>
 <body>
 {% block layout %}
-{# Default: app layout with dark sidebar #}
-<div class="app-layout">
-  {# ── Sidebar ── #}
-  <aside class="sidebar">
-    <div class="sidebar-brand">
-      <a href="/projects" class="brand-logo">
-        <div class="brand-icon">SF</div>
-        <div class="brand-text">
-          <div class="brand-name">ScholarForge</div>
-          <div class="brand-tag">Research · Write · Cite</div>
-        </div>
-      </a>
-    </div>
-
-    <nav class="sidebar-nav">
-      {% block sidebar_nav %}
-      <a href="/projects" class="nav-item active">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v8.25"/></svg>
-        My Projects
-      </a>
-      {% endblock %}
+{% set _nav = (self.active_nav() | trim) or "home" %}
+<div class="shell">
+  <aside class="sidenav" aria-label="Main">
+    <a href="/projects" class="brand"><span class="brand-mark">SF</span> ScholarForge</a>
+    <button type="button" class="btn btn-primary btn-new" data-open-new-project>
+      {{ icon("plus") }} New project
+    </button>
+    <nav class="nav-list">
+      <a class="nav-link" href="/projects" {% if _nav == "home" %}aria-current="page"{% endif %}>{{ icon("home") }} Home</a>
+      <a class="nav-link" href="/library" {% if _nav == "library" %}aria-current="page"{% endif %}>{{ icon("library") }} My Library</a>
+      <a class="nav-link" href="/notes" {% if _nav == "notes" %}aria-current="page"{% endif %}>{{ icon("notes") }} My Notes</a>
+      <a class="nav-link" href="/settings" {% if _nav == "settings" %}aria-current="page"{% endif %}>{{ icon("settings") }} Settings</a>
     </nav>
-
-    <div class="sidebar-footer">
-      {% if user %}
-      <div class="user-row">
-        <div class="user-avatar">{{ user.email[0].upper() }}</div>
-        <span class="user-email">{{ user.email }}</span>
-      </div>
-      <form method="post" action="/auth/logout">
-        <button class="sidebar-logout" type="submit">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/></svg>
-          Sign out
-        </button>
-      </form>
-      {% endif %}
+    {% if user %}
+    <div class="sidenav-footer">
+      <div class="sidenav-user" title="{{ user.email }}">{{ user.email }}</div>
     </div>
+    {% endif %}
   </aside>
 
-  {# ── Main ── #}
-  <main class="main-content">
+  <main class="main">
     {% block body %}{% endblock %}
   </main>
+
+  <nav class="tabbar" aria-label="Main">
+    <a class="tab" href="/projects" {% if _nav == "home" %}aria-current="page"{% endif %}>{{ icon("home") }}Home</a>
+    <a class="tab" href="/library" {% if _nav == "library" %}aria-current="page"{% endif %}>{{ icon("library") }}Library</a>
+    <button type="button" class="tab" data-open-new-project>{{ icon("plus") }}New</button>
+    <a class="tab" href="/notes" {% if _nav == "notes" %}aria-current="page"{% endif %}>{{ icon("notes") }}Notes</a>
+    <a class="tab" href="/settings" {% if _nav == "settings" %}aria-current="page"{% endif %}>{{ icon("settings") }}Settings</a>
+  </nav>
 </div>
+
+{# One "New project" dialog, reachable from every screen #}
+<dialog class="dialog" id="new-project-dialog" aria-labelledby="np-title">
+  <form method="post" action="/projects">
+    <h2 id="np-title">New project</h2>
+    <p class="muted small">A project keeps the papers and notes for one assignment or topic together.</p>
+    <div class="field" style="margin-top:20px">
+      <label for="np-name">Project name</label>
+      <input id="np-name" name="name" type="text" maxlength="255" required
+             placeholder="e.g. Final report: Remote work and team trust">
+    </div>
+    <div class="field">
+      <label for="np-q">What do you want to find out? <span class="hint" style="display:inline">(optional)</span></label>
+      <input id="np-q" name="research_question" type="text" maxlength="500"
+             placeholder="e.g. Does remote work reduce trust in software teams?">
+    </div>
+    <div class="dialog-actions">
+      <button type="button" class="btn btn-secondary" data-close-dialog>Cancel</button>
+      <button type="submit" class="btn btn-primary">Create project</button>
+    </div>
+  </form>
+</dialog>
+<script>
+(function () {
+  var dlg = document.getElementById("new-project-dialog");
+  function openNew() { if (dlg.showModal) { dlg.showModal(); } else { dlg.setAttribute("open", ""); } document.getElementById("np-name").focus(); }
+  document.querySelectorAll("[data-open-new-project]").forEach(function (b) { b.addEventListener("click", openNew); });
+  dlg.querySelector("[data-close-dialog]").addEventListener("click", function () { dlg.close ? dlg.close() : dlg.removeAttribute("open"); });
+  if (new URLSearchParams(location.search).get("new") === "1") { openNew(); }
+})();
+</script>
 {% endblock %}
 </body>
 </html>

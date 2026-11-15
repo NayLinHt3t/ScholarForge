@@ -9,6 +9,8 @@ class Note(BaseModel):
     user_id: str
     title: str = ""
     body: str
+    source_id: str | None = None   # optional linked paper
+    source_title: str = ""         # denormalised for display
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -19,4 +21,6 @@ class Note(BaseModel):
     def from_firestore(cls, doc) -> "Note":
         data = doc.to_dict()
         data.setdefault("title", "")
+        data.setdefault("source_id", None)
+        data.setdefault("source_title", "")
         return cls(id=doc.id, **data)

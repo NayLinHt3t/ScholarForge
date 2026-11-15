@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.exception_handlers import http_exception_handler as _default_http_handler
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.routers import auth as auth_router
@@ -27,12 +28,15 @@ from app.routers import search as search_router
 from app.routers import sources as sources_router
 from app.routers import summary as summary_router
 from app.routers import themes as themes_router
+from app.routers import views as views_router
 from app.routers import workspace_outline as workspace_outline_router
 
 app = FastAPI(title="ScholarForge")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 _templates = Jinja2Templates(directory="app/templates")
 app.include_router(auth_router.router)
 app.include_router(projects_router.router)
+app.include_router(views_router.router)   # Home-level screens: My Library, My Notes, Settings
 # workspace MVP routes (order matters: more specific paths first)
 app.include_router(sources_router.router)
 app.include_router(evidence_router.router)

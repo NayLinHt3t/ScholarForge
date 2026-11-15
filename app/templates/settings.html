@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon %}
+{% block title %}Settings — ScholarForge{% endblock %}
+{% block active_nav %}settings{% endblock %}
+
+{% block body %}
+<div class="page">
+  <div class="page-header"><div><h1>Settings</h1></div></div>
+
+  <section class="section" style="margin-top:0">
+    <div class="section-head"><h2>Account</h2></div>
+    <div class="list">
+      <div class="list-row">
+        <div class="grow"><div class="list-title">Email</div><div class="list-meta">{{ user.email }}</div></div>
+      </div>
+      <div class="list-row">
+        <div class="grow"><div class="list-title">Sign out</div><div class="list-meta">You can sign back in any time.</div></div>
+        <form method="post" action="/auth/logout"><button class="btn btn-secondary btn-sm" type="submit">Sign out</button></form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>AI assistant</h2></div>
+    <div class="list">
+      <div class="list-row">
+        <div class="grow">
+          <div class="list-title">Status</div>
+          {% if ai_ready %}
+          <div class="list-meta">Ready. Runs privately on this computer — your papers and questions are not sent to an online AI service.</div>
+          {% else %}
+          <div class="list-meta">Not running. To use summaries and questions, open a terminal and run <code>ollama serve</code>, then reload this page.</div>
+          {% endif %}
+        </div>
+        {% if ai_ready %}<span class="chip chip-success">Ready</span>{% else %}<span class="chip chip-warning">Not running</span>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Privacy</h2></div>
+    <div class="list">
+      <a class="list-row" href="/terms">
+        <div class="grow"><div class="list-title">Terms and privacy</div><div class="list-meta">What ScholarForge stores and why</div></div>
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      <a class="list-row" href="/auth/delete-account">
+        <div class="grow"><div class="list-title" style="color:var(--danger)">Delete account</div><div class="list-meta">Permanently remove your account and all projects. You'll be asked to confirm.</div></div>
+        {{ icon("chevron", "icon chev") }}
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

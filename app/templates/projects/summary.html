@@ -4,37 +4,36 @@
 {% block styles %}
 .source-check-item {
   display: flex; align-items: flex-start; gap: 10px;
-  padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
   margin-bottom: 8px; background: white; cursor: pointer;
   transition: border-color .12s, background .12s;
 }
-.source-check-item:hover { border-color: #bfdbfe; background: #f8fafc; }
-.source-check-item input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; accent-color: #3b82f6; }
-.check-label { font-size: .875rem; font-weight: 600; color: #0f172a; }
-.check-meta  { font-size: .75rem; color: #94a3b8; margin-top: 2px; }
+.source-check-item:hover { border-color: #cdd9f8; background: var(--surface-muted); }
+.source-check-item input[type="checkbox"] { margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+.check-label { font-size: .875rem; font-weight: 600; color: var(--text); }
+.check-meta  { font-size: .75rem; color: var(--text-faint); margin-top: 2px; }
 
 .summary-result {
-  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  background: white; border: 1px solid var(--border); border-radius: 10px;
   padding: 22px 24px; margin-top: 24px;
 }
 .summary-heading {
-  font-size: 1rem; font-weight: 800; color: #0f172a;
-  border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 14px;
+  font-size: 1rem; font-weight: 800; color: var(--text);
+  border-bottom: 1px solid var(--surface-muted); padding-bottom: 10px; margin-bottom: 14px;
 }
-.summary-body { font-size: .875rem; line-height: 1.75; color: #374151; white-space: pre-wrap; }
+.summary-body { font-size: .875rem; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
 .summary-refs {
-  margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9;
-  font-size: .775rem; color: #64748b; white-space: pre-wrap; line-height: 1.6;
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--surface-muted);
+  font-size: .775rem; color: var(--text-muted); white-space: pre-wrap; line-height: 1.6;
 }
 .summary-footer { display: flex; gap: 10px; margin-top: 16px; }
 {% endblock %}
 
-{% block sidebar_nav %}{% set nav_active = 'summary' %}{% include "projects/_project_nav.html" %}{% endblock %}
 
 {% block body %}
 <div class="topbar">
   <div class="breadcrumb">
-    <a href="/projects">My Projects</a>
+    <a href="/projects">Home</a>
     <span class="breadcrumb-sep">›</span>
     <a href="/projects/{{ project.id }}">{{ project.name }}</a>
     <span class="breadcrumb-sep">›</span>

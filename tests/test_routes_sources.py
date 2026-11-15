@@ -85,7 +85,8 @@ class TestSourceDetail:
             patch("app.routers.sources.project_service.get_project", return_value=FAKE_PROJECT),
             patch("app.routers.sources.library_service.get_resource", return_value=FAKE_SOURCE),
             patch("app.routers.sources.evidence_service.list_evidence_for_source", return_value=[]),
-            patch("app.routers.sources.format_one", return_value="Citation text"),
+            patch("app.routers.sources.format_apa", return_value="APA citation"),
+            patch("app.routers.sources.format_ieee", return_value="[1] IEEE citation"),
         ):
             resp = client.get("/projects/p1/sources/s1")
         assert resp.status_code == 200
@@ -140,6 +141,6 @@ class TestDeleteSource:
         ):
             resp = client.post("/projects/p1/sources/s1/delete")
         assert resp.status_code == 303
-        assert resp.headers["location"] == "/projects/p1/sources"
+        assert resp.headers["location"] == "/projects/p1"  # back to the project workspace
         mock_del_ev.assert_called_once()
         mock_del.assert_called_once()

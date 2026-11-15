@@ -4,7 +4,7 @@ import httpx
 from app.config import SEMANTIC_SCHOLAR_API_KEY
 
 _BASE = "https://api.semanticscholar.org/graph/v1"
-_FIELDS = "title,authors,year,venue,abstract,externalIds,url"
+_FIELDS = "title,authors,year,venue,abstract,externalIds,url,isOpenAccess,openAccessPdf"
 
 
 def _headers() -> dict:

@@ -4,7 +4,7 @@ import math
 import time
 from dataclasses import dataclass, field
 
-from app.clients import crossref, ollama, semantic_scholar
+from app.clients import ollama, openalex, semantic_scholar
 from app.config import SEARCH_LOW_CONFIDENCE_THRESHOLD, SEARCH_MAX_PER_SOURCE, SEARCH_TOP_K
 from app.exceptions import OllamaUnavailableError
 from app.models.search import SearchResult
@@ -42,9 +42,12 @@ def _normalize_ss(items: list[dict]) -> list[SearchResult]:
     for item in items:
         if not item.get("title"):
             continue
+        if not item.get("isOpenAccess"):
+            continue
         ext = item.get("externalIds") or {}
         doi = ext.get("DOI")
         arxiv_id = ext.get("ArXiv")
+        oa_pdf = (item.get("openAccessPdf") or {}).get("url")
         results.append(SearchResult(
             title=item["title"],
             authors=[a["name"] for a in (item.get("authors") or [])],
@@ -52,41 +55,42 @@ def _normalize_ss(items: list[dict]) -> list[SearchResult]:
             venue=item.get("venue") or None,
             doi=doi,
             arxiv_id=arxiv_id,
-            url=_resolve_url(doi, arxiv_id, item.get("url")),
+            url=oa_pdf or _resolve_url(doi, arxiv_id, item.get("url")),
             abstract=item.get("abstract"),
             source="semantic_scholar",
         ))
     return results
 
 
-def _normalize_cr(items: list[dict]) -> list[SearchResult]:
+def _normalize_oa(items: list[dict]) -> list[SearchResult]:
     results = []
     for item in items:
-        titles = item.get("title") or []
-        if not titles:
+        if not item.get("title"):
             continue
-        authors = []
-        for a in item.get("author") or []:
-            name = f"{a.get('given', '')} {a.get('family', '')}".strip()
-            if name:
-                authors.append(name)
-        year = None
-        for key in ("published-print", "published-online"):
-            parts = (item.get(key) or {}).get("date-parts", [[]])
-            if parts and parts[0]:
-                year = parts[0][0]
-                break
-        venues = item.get("container-title") or []
-        doi = item.get("DOI")
+        best = item.get("best_oa_location") or {}
+        pdf_url = best.get("pdf_url")
+        if not pdf_url:
+            continue  # skip — no direct PDF means user hits a paywall
+        doi_full = item.get("doi") or ""
+        doi = doi_full.removeprefix("https://doi.org/") or None
+        primary = item.get("primary_location") or {}
+        venue = (primary.get("source") or {}).get("display_name")
+        authors = [
+            a["author"]["display_name"]
+            for a in (item.get("authorships") or [])
+            if (a.get("author") or {}).get("display_name")
+        ]
+        abstract_inv = item.get("abstract_inverted_index")
+        abstract = openalex.reconstruct_abstract(abstract_inv) if abstract_inv else None
         results.append(SearchResult(
-            title=titles[0],
+            title=item["title"],
             authors=authors,
-            year=year,
-            venue=venues[0] if venues else None,
+            year=item.get("publication_year"),
+            venue=venue,
             doi=doi,
-            url=_resolve_url(doi, None, item.get("URL")),
-            abstract=item.get("abstract"),
-            source="crossref",
+            url=pdf_url,
+            abstract=abstract,
+            source="openalex",
         ))
     return results
 
@@ -105,9 +109,9 @@ async def run(idea: str) -> SearchResponse:
         raise OllamaUnavailableError()
 
     t_api = time.perf_counter()
-    ss_raw, cr_raw = await asyncio.gather(
+    ss_raw, oa_raw = await asyncio.gather(
         semantic_scholar.search(idea, limit=SEARCH_MAX_PER_SOURCE),
-        crossref.search(idea, limit=SEARCH_MAX_PER_SOURCE),
+        openalex.search(idea, limit=SEARCH_MAX_PER_SOURCE),
         return_exceptions=True,
     )
     api_ms = int((time.perf_counter() - t_api) * 1000)
@@ -126,11 +130,11 @@ async def run(idea: str) -> SearchResponse:
     else:
         candidates.extend(_normalize_ss(ss_raw))
 
-    if isinstance(cr_raw, Exception):
-        source_errors.append("CrossRef")
-        logger.warning("search.api.error source=crossref error=%s", cr_raw)
+    if isinstance(oa_raw, Exception):
+        source_errors.append("OpenAlex")
+        logger.warning("search.api.error source=openalex error=%s", oa_raw)
     else:
-        candidates.extend(_normalize_cr(cr_raw))
+        candidates.extend(_normalize_oa(oa_raw))
 
     if not candidates:
         logger.info("search.no_candidates api_ms=%d sources_failed=%s", api_ms, source_errors)

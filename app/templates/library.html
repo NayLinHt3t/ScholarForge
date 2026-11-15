@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, empty, read_status, authors_short %}
+{% block title %}My Library — ScholarForge{% endblock %}
+{% block active_nav %}library{% endblock %}
+
+{% block body %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>My Library</h1>
+      <p>Every paper you've saved, from all your projects.</p>
+    </div>
+    {% if projects | length == 1 %}
+    <a class="btn btn-primary" href="/projects/{{ projects[0].id }}/search">{{ icon("search") }} Find papers</a>
+    {% elif projects %}
+    <form method="get" action="/library/find" class="row" style="gap:6px">
+      <label for="find-proj" class="small muted" style="margin:0;font-weight:500">Add papers to</label>
+      <select id="find-proj" name="project" style="width:auto;height:38px;max-width:220px" required>
+        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit">{{ icon("search") }} Find papers</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if total %}
+  <form method="get" action="/library" class="toolbar" role="search">
+    <div class="search-input">
+      {{ icon("search") }}
+      <input type="search" name="q" value="{{ q }}" placeholder="Search by title or author" aria-label="Search papers">
+    </div>
+    {% if projects | length > 1 %}
+    <select name="project" aria-label="Project" onchange="this.form.submit()">
+      <option value="">All projects</option>
+      {% for p in projects %}<option value="{{ p.id }}" {{ "selected" if p.id == project_filter }}>{{ p.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <select name="status" aria-label="Reading status" onchange="this.form.submit()">
+      <option value="">Any status</option>
+      <option value="unread" {{ "selected" if status_filter == "unread" }}>Not started</option>
+      <option value="reading" {{ "selected" if status_filter == "reading" }}>Reading</option>
+      <option value="done" {{ "selected" if status_filter == "done" }}>Read</option>
+    </select>
+    <button class="btn btn-secondary" type="submit">Search</button>
+  </form>
+
+    {% if papers %}
+    <div class="list">
+      {% for p in papers %}
+      <a class="list-row" href="/projects/{{ p.project_id }}/sources/{{ p.id }}">
+        {{ icon("file") }}
+        <div class="grow">
+          <div class="list-title">{{ p.title }}</div>
+          <div class="list-meta">
+            {{ authors_short(p.authors) }}{% if p.year %} · {{ p.year }}{% endif %} · {{ project_names.get(p.project_id, "") }}
+            {% if not p.abstract %} · <span style="color:var(--warning)">No abstract — AI can't read this one</span>{% endif %}
+          </div>
+        </div>
+        {{ read_status(p.read_status) }}
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      {% endfor %}
+    </div>
+    <p class="small faint" style="margin-top:10px">Showing {{ papers | length }} of {{ total }} paper{{ "s" if total != 1 }}.</p>
+    {% else %}
+    <div class="empty">
+      <h3>No papers match</h3>
+      <p>Try a different word, or clear the filters.</p>
+      <a class="btn btn-secondary" href="/library">Clear filters</a>
+    </div>
+    {% endif %}
+
+  {% elif projects %}
+    {% call empty("library", "Your library is empty", "Open a project and use Find papers. Every paper you save shows up here.") %}
+      <a class="btn btn-primary" href="/projects/{{ projects[0].id }}/search">{{ icon("search") }} Find papers</a>
+    {% endcall %}
+  {% else %}
+    {% call empty("library", "Your library is empty", "Papers belong to a project. Create a project first, then find papers for it.") %}
+      <button type="button" class="btn btn-primary" data-open-new-project>{{ icon("plus") }} New project</button>
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

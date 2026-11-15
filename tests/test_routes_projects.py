@@ -30,7 +30,8 @@ class TestCreateProject:
         ):
             resp = client.post("/projects", data={"name": "My New Project"})
         assert resp.status_code == 303
-        assert resp.headers["location"] == "/projects"
+        # new projects open straight away so the next step is visible
+        assert resp.headers["location"] == "/projects/p1"
 
     def test_create_project_empty_name_returns_400(self, client):
         with patch(

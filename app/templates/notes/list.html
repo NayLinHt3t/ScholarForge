@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, empty %}
+{% block title %}{% if scoped_project %}Notes — {{ scoped_project.name }}{% else %}My Notes{% endif %} — ScholarForge{% endblock %}
+{% block active_nav %}{% if scoped_project %}home{% else %}notes{% endif %}{% endblock %}
+
+{% block body %}
+<div class="page">
+  {% if scoped_project %}
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/projects">Home</a><span class="sep">/</span>
+    <a href="/projects/{{ scoped_project.id }}">{{ scoped_project.name }}</a><span class="sep">/</span><span>Notes</span>
+  </nav>
+  {% endif %}
+
+  <div class="page-header">
+    <div>
+      <h1>{% if scoped_project %}Notes{% else %}My Notes{% endif %}</h1>
+      <p>{% if scoped_project %}Notes for {{ scoped_project.name }}.{% else %}All your notes, from every project.{% endif %}</p>
+    </div>
+    {% if scoped_project %}
+    <a class="btn btn-primary" href="/projects/{{ scoped_project.id }}/notes/new">{{ icon("plus") }} New note</a>
+    {% elif projects | length == 1 %}
+    <a class="btn btn-primary" href="/projects/{{ projects[0].id }}/notes/new">{{ icon("plus") }} New note</a>
+    {% elif projects %}
+    <form method="get" action="/notes/new" class="row" style="gap:6px">
+      <label for="note-proj" class="small muted" style="margin:0;font-weight:500">New note in</label>
+      <select id="note-proj" name="project" style="width:auto;height:38px;max-width:220px" required>
+        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit">{{ icon("plus") }} Create</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if total %}
+  <form method="get" action="" class="toolbar" role="search">
+    <div class="search-input">
+      {{ icon("search") }}
+      <input type="search" name="q" value="{{ q }}" placeholder="Search your notes" aria-label="Search notes">
+    </div>
+    {% if not scoped_project and projects | length > 1 %}
+    <select name="project" aria-label="Project" onchange="this.form.submit()">
+      <option value="">All projects</option>
+      {% for p in projects %}<option value="{{ p.id }}" {{ "selected" if p.id == project_filter }}>{{ p.name }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <button class="btn btn-secondary" type="submit">Search</button>
+  </form>
+
+    {% if notes %}
+    <div class="list">
+      {% for n in notes %}
+      <a class="list-row" href="/projects/{{ n.project_id }}/notes/{{ n.id }}" style="align-items:flex-start">
+        {{ icon("notes") }}
+        <div class="grow">
+          <div class="list-title">{{ n.title or "Untitled note" }}</div>
+          <div class="note-snippet">{{ n.body }}</div>
+          <div class="list-meta" style="margin-top:4px">
+            {% if not scoped_project %}{{ project_names.get(n.project_id, "") }} · {% endif %}{% if n.source_title %}From: {{ n.source_title }} · {% endif %}{{ n.updated_at.strftime("%b %d, %Y") }}
+          </div>
+        </div>
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <h3>No notes match “{{ q }}”</h3>
+      <p>Try a different word.</p>
+      <a class="btn btn-secondary" href="?">Clear search</a>
+    </div>
+    {% endif %}
+
+  {% elif projects %}
+    {% call empty("notes", "No notes yet", "Open a paper and ask the AI a question — you can save any answer as a note. Or write one yourself.") %}
+      {% if scoped_project %}
+      <a class="btn btn-primary" href="/projects/{{ scoped_project.id }}/notes/new">{{ icon("plus") }} Write a note</a>
+      {% else %}
+      <a class="btn btn-primary" href="/projects/{{ projects[0].id }}/notes/new">{{ icon("plus") }} Write a note</a>
+      {% endif %}
+    {% endcall %}
+  {% else %}
+    {% call empty("notes", "No notes yet", "Notes belong to a project. Create a project first.") %}
+      <button type="button" class="btn btn-primary" data-open-new-project>{{ icon("plus") }} New project</button>
+    {% endcall %}
+  {% endif %}
+</div>
+{% endblock %}

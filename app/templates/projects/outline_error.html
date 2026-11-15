@@ -5,12 +5,12 @@
 <div class="auth-page">
   <div class="auth-box" style="max-width:480px">
     <div class="auth-brand">
-      <div class="auth-brand-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">SF</div>
+      <div class="auth-brand-icon" style="background:linear-gradient(135deg,var(--warning),var(--warning))">SF</div>
       <div class="auth-brand-name">ScholarForge</div>
     </div>
 
     <div class="auth-card">
-      <div class="auth-card-title" style="color:#b45309">Outline rejected</div>
+      <div class="auth-card-title" style="color:var(--warning)">Outline rejected</div>
       <div class="auth-card-subtitle">
         The generated outline contained citation markers that don't match any of your saved resources.
         It was not saved.
@@ -19,13 +19,13 @@
       <div class="alert alert-warning" style="margin-bottom:18px">
         <div>
           <strong>Invalid markers:</strong>
-          <code style="margin-left:6px;background:#fef3c7;padding:1px 5px;border-radius:3px">
+          <code style="margin-left:6px;background:var(--warning-soft);padding:1px 5px;border-radius:3px">
             {{ invalid_markers | join(", ") }}
           </code>
         </div>
       </div>
 
-      <p style="font-size:.82rem;color:#64748b;margin-bottom:20px;line-height:1.6">
+      <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:20px;line-height:1.6">
         This usually means the AI model invented a citation number outside the range of your library.
         Regenerating typically resolves it.
       </p>

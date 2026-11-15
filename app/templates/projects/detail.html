@@ -1,123 +1,106 @@
 {% extends "base.html" %}
+{% from "_ui.html" import icon, empty, read_status, authors_short %}
 {% block title %}{{ project.name }} — ScholarForge{% endblock %}
-
-{% block styles %}
-.dashboard-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 14px; margin-bottom: 28px;
-}
-.dash-card {
-  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
-  padding: 18px 16px; text-align: center; text-decoration: none; color: inherit;
-  transition: border-color .13s, box-shadow .13s; display: block;
-}
-.dash-card:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,.12); }
-.dash-card-count { font-size: 2rem; font-weight: 800; color: #1d4ed8; line-height: 1; margin-bottom: 4px; }
-.dash-card-label { font-size: .78rem; color: #64748b; font-weight: 500; }
-.rq-text { font-size: .88rem; color: #475569; line-height: 1.6; margin-bottom: 8px; font-style: italic; }
-.edit-rq-btn { font-size: .75rem; color: #3b82f6; background: none; border: none; cursor: pointer; padding: 0; text-decoration: underline; }
-.edit-rq-form { display: none; margin-top: 12px; }
-.edit-rq-form.open { display: block; }
-{% endblock %}
-
-{% block sidebar_nav %}{% set nav_active = 'dashboard' %}{% include "projects/_project_nav.html" %}{% endblock %}
+{% block active_nav %}home{% endblock %}
 
 {% block body %}
-<div class="topbar">
-  <div class="breadcrumb">
-    <a href="/projects">My Projects</a>
-    <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">{{ project.name }}</span>
-  </div>
-  <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/delete"
-     style="color:#dc2626;border-color:#fecaca;font-size:.75rem">Delete project</a>
-</div>
+<div class="page">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/projects">Home</a><span class="sep">/</span><span>{{ project.name }}</span></nav>
 
-<div class="page-body">
-  {# ── Research Question ── #}
-  <div class="card" style="margin-bottom:24px">
-    <div class="flex items-center justify-between gap-3 mb-2">
-      <span class="font-bold" style="font-size:.9rem">Research Question</span>
-      <button class="edit-rq-btn" onclick="toggleRQForm()">Edit</button>
+  <div class="page-header">
+    <div style="min-width:0;flex:1">
+      <h1>{{ project.name }}</h1>
+      {% if project.research_question %}
+      <p>{{ project.research_question }}</p>
+      {% endif %}
+      <details class="small" style="margin-top:6px">
+        <summary class="link-btn" style="cursor:pointer;list-style:none;display:inline">Rename or edit question</summary>
+        <form method="post" action="/projects/{{ project.id }}/edit" class="panel" style="margin-top:10px;max-width:520px;padding:16px">
+          <div class="field"><label for="pn">Project name</label><input id="pn" type="text" name="name" value="{{ project.name }}" required maxlength="255"></div>
+          <div class="field"><label for="pq">What do you want to find out?</label><input id="pq" type="text" name="research_question" value="{{ project.research_question }}" maxlength="500" placeholder="e.g. Does remote work reduce trust in software teams?"></div>
+          <button class="btn btn-primary btn-sm" type="submit">Save</button>
+        </form>
+      </details>
     </div>
-    {% if project.research_question %}
-    <p class="rq-text" id="rq-display">{{ project.research_question }}</p>
+    <a class="btn btn-primary" href="/projects/{{ project.id }}/search">{{ icon("search") }} Find papers</a>
+  </div>
+
+  {# ── Papers ── #}
+  <section class="section" style="margin-top:0" aria-labelledby="papers-title">
+    <div class="section-head">
+      <h2 id="papers-title">Papers <span class="faint" style="font-weight:400">· {{ papers | length }}</span></h2>
+    </div>
+    {% if papers %}
+    <div class="list">
+      {% for p in papers %}
+      <a class="list-row" href="/projects/{{ project.id }}/sources/{{ p.id }}">
+        {{ icon("file") }}
+        <div class="grow">
+          <div class="list-title">{{ p.title }}</div>
+          <div class="list-meta">{{ authors_short(p.authors) }}{% if p.year %} · {{ p.year }}{% endif %}</div>
+        </div>
+        {{ read_status(p.read_status) }}
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      {% endfor %}
+    </div>
     {% else %}
-    <p class="rq-text" id="rq-display" style="color:#94a3b8">Not set yet — click Edit to add your research question.</p>
+      {% call empty("file", "No papers yet", "Describe your topic in your own words and ScholarForge will suggest matching papers. Save the ones you like.") %}
+        <a class="btn btn-primary" href="/projects/{{ project.id }}/search">{{ icon("search") }} Find papers</a>
+      {% endcall %}
     {% endif %}
-    <form class="edit-rq-form" id="rq-form" method="post" action="/projects/{{ project.id }}/edit">
-      <div class="field">
-        <input type="hidden" name="name" value="{{ project.name }}">
-        <input type="text" name="research_question"
-               value="{{ project.research_question }}"
-               placeholder="e.g. How does social media affect political polarization?">
-      </div>
-      <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary btn-sm">Save</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleRQForm()">Cancel</button>
-      </div>
-    </form>
-  </div>
+  </section>
 
-  {# ── Dashboard counts ── #}
-  <div class="dashboard-grid">
-    <a class="dash-card" href="/projects/{{ project.id }}/sources">
-      <div class="dash-card-count">{{ counts.sources }}</div>
-      <div class="dash-card-label">Sources</div>
-    </a>
-    <a class="dash-card" href="/projects/{{ project.id }}/evidence">
-      <div class="dash-card-count">{{ counts.evidence }}</div>
-      <div class="dash-card-label">Evidence</div>
-    </a>
-    <a class="dash-card" href="/projects/{{ project.id }}/notes">
-      <div class="dash-card-count">{{ counts.notes }}</div>
-      <div class="dash-card-label">Notes</div>
-    </a>
-    <a class="dash-card" href="/projects/{{ project.id }}/themes">
-      <div class="dash-card-count">{{ counts.themes }}</div>
-      <div class="dash-card-label">Themes</div>
-    </a>
-    <a class="dash-card" href="/projects/{{ project.id }}/claims">
-      <div class="dash-card-count">{{ counts.claims }}</div>
-      <div class="dash-card-label">Claims</div>
-    </a>
-    <a class="dash-card" href="/projects/{{ project.id }}/outline">
-      <div class="dash-card-count">{{ counts.sections }}</div>
-      <div class="dash-card-label">Outline sections</div>
-    </a>
-  </div>
-
-  {# ── Workflow guide ── #}
-  {% if counts.sources == 0 %}
-  <div class="alert alert-info">
-    <div>
-      <strong>Getting started:</strong> Begin by
-      <a href="/projects/{{ project.id }}/sources" style="color:#1d4ed8;font-weight:600">adding your sources</a>.
-      Then extract evidence from each one, group evidence into themes, form claims, and assemble your outline.
+  {# ── Notes ── #}
+  <section class="section" aria-labelledby="notes-title">
+    <div class="section-head">
+      <h2 id="notes-title">Notes <span class="faint" style="font-weight:400">· {{ notes | length }}</span></h2>
+      <a class="btn btn-secondary btn-sm" href="/projects/{{ project.id }}/notes/new?back=/projects/{{ project.id }}">{{ icon("plus") }} New note</a>
     </div>
-  </div>
-  {% endif %}
-
-  {# ── Export shortcuts ── #}
-  <div class="card" style="margin-top:24px">
-    <div class="section-title" style="margin-bottom:12px">Export</div>
-    <div class="flex gap-3 flex-wrap">
-      <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/export/full.md">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-        Full research structure (.md)
+    {% if notes %}
+    <div class="list">
+      {% for n in notes[:8] %}
+      <a class="list-row" href="/projects/{{ project.id }}/notes/{{ n.id }}?back=/projects/{{ project.id }}">
+        {{ icon("notes") }}
+        <div class="grow">
+          <div class="list-title">{{ n.title or (n.body[:60] ~ ("…" if n.body | length > 60 else "")) }}</div>
+          <div class="list-meta">{% if n.source_title %}From: {{ n.source_title }} · {% endif %}{{ n.updated_at.strftime("%b %d") }}</div>
+        </div>
+        {{ icon("chevron", "icon chev") }}
       </a>
-      <a class="btn btn-ghost btn-sm" href="/projects/{{ project.id }}/export/outline.md">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-        Outline scaffold (.md)
-      </a>
+      {% endfor %}
+      {% if notes | length > 8 %}<a class="list-more" href="/projects/{{ project.id }}/notes">See all {{ notes | length }} notes</a>{% endif %}
     </div>
-  </div>
+    {% else %}
+    <div class="empty" style="padding:28px 20px">
+      <p style="margin-bottom:0">Notes you write — or answers you save from the AI assistant while reading — will appear here.</p>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── Advanced tools, hidden until needed ── #}
+  <section class="section">
+    <details class="disclosure">
+      <summary>More tools</summary>
+      <div class="disclosure-body">
+        <p class="small muted" style="margin-bottom:12px">Extra tools for when you start writing. You don't need these to get started.</p>
+        <div class="list">
+          <a class="list-row" href="/projects/{{ project.id }}/outline"><div class="grow"><div class="list-title">Paper outline</div><div class="list-meta">Plan your report section by section (IEEE layout)</div></div>{{ icon("chevron", "icon chev") }}</a>
+          <a class="list-row" href="/projects/{{ project.id }}/summarize"><div class="grow"><div class="list-title">Summarize several papers</div><div class="list-meta">One short summary of the papers you choose, with citations</div></div>{{ icon("chevron", "icon chev") }}</a>
+          <a class="list-row" href="/projects/{{ project.id }}/evidence"><div class="grow"><div class="list-title">Saved quotes</div><div class="list-meta">Exact sentences you copied from papers</div></div>{{ icon("chevron", "icon chev") }}</a>
+          <a class="list-row" href="/projects/{{ project.id }}/themes"><div class="grow"><div class="list-title">Themes</div><div class="list-meta">Group quotes by topic</div></div>{{ icon("chevron", "icon chev") }}</a>
+          <a class="list-row" href="/projects/{{ project.id }}/claims"><div class="grow"><div class="list-title">Claims</div><div class="list-meta">Statements you want to argue, with supporting quotes</div></div>{{ icon("chevron", "icon chev") }}</a>
+          <a class="list-row" href="/projects/{{ project.id }}/sources"><div class="grow"><div class="list-title">Add a paper by hand</div><div class="list-meta">Type in a paper's details yourself</div></div>{{ icon("chevron", "icon chev") }}</a>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <span class="small muted">Download:</span>
+          <a class="btn btn-secondary btn-sm" href="/projects/{{ project.id }}/export/full.md">Everything (.md)</a>
+          <a class="btn btn-secondary btn-sm" href="/projects/{{ project.id }}/library/export.bib">References (.bib)</a>
+          <span class="spacer"></span>
+          <a class="btn btn-danger btn-sm" href="/projects/{{ project.id }}/delete">Delete project</a>
+        </div>
+      </div>
+    </details>
+  </section>
 </div>
-
-<script>
-function toggleRQForm() {
-  const form = document.getElementById('rq-form');
-  form.classList.toggle('open');
-}
-</script>
 {% endblock %}
