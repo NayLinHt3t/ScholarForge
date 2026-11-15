@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon %}
+{% block title %}{% if note %}{{ note.title or "Note" }}{% else %}New note{% endif %} — ScholarForge{% endblock %}
+{% block active_nav %}notes{% endblock %}
+
+{% block body %}
+{% set back = request.query_params.get("back", "") %}{% if not (back.startswith("/") and not back.startswith("//")) %}{% set back = "/notes" %}{% endif %}
+<div class="page">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/notes">My Notes</a><span class="sep">/</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a><span class="sep">/</span>
+    <span>{% if note %}Edit note{% else %}New note{% endif %}</span>
+  </nav>
+
+  <form method="post" id="note-form"
+        action="{% if note %}/projects/{{ project.id }}/notes/{{ note.id }}/edit{% else %}/projects/{{ project.id }}/notes{% endif %}">
+    <input type="hidden" name="return_to" value="{{ back }}">
+    <div class="field">
+      <label for="nt">Title</label>
+      <input id="nt" class="note-title-input" type="text" name="title" maxlength="200"
+             value="{{ note.title if note else '' }}" placeholder="Give your note a short title">
+    </div>
+    <div class="field">
+      <label for="nb">Note</label>
+      <textarea id="nb" class="note-body-input" name="body" required
+                placeholder="Write your thoughts, a summary in your own words, or ideas for your report…">{{ note.body if note else '' }}</textarea>
+    </div>
+    <div class="field" style="max-width:520px">
+      <label for="ns">Linked paper</label>
+      <select id="ns" name="source_id">
+        <option value="">No linked paper</option>
+        {% for p in papers %}<option value="{{ p.id }}" {{ "selected" if p.id == linked_source_id }}>{{ p.title[:90] }}{% if p.title | length > 90 %}…{% endif %}</option>{% endfor %}
+      </select>
+      <div class="hint">Linking a note to a paper shows it on that paper's page.</div>
+    </div>
+
+    <div class="row" style="margin-top:24px">
+      <button type="submit" class="btn btn-primary">{{ icon("save") }} Save note</button>
+      <a class="btn btn-secondary" href="{{ back }}">Cancel</a>
+      {% if linked_source_id %}
+      <a class="link-btn" href="/projects/{{ project.id }}/sources/{{ linked_source_id }}" style="margin-left:8px">Open linked paper</a>
+      {% endif %}
+      <span class="spacer"></span>
+      {% if note %}
+      <button type="submit" form="delete-form" class="btn btn-danger btn-sm">Delete note</button>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if note %}
+  <form id="delete-form" method="post" action="/projects/{{ project.id }}/notes/{{ note.id }}/delete"
+        onsubmit="return confirm('Delete this note? This cannot be undone.')">
+    <input type="hidden" name="return_to" value="{{ back }}">
+  </form>
+  <p class="small faint" style="margin-top:16px">Last edited {{ note.updated_at.strftime("%b %d, %Y at %H:%M") }} UTC</p>
+  {% endif %}
+</div>
+{% endblock %}

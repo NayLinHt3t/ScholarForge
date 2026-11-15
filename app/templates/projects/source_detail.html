@@ -1,227 +1,292 @@
 {% extends "base.html" %}
+{% from "_ui.html" import icon, authors_short %}
 {% block title %}{{ source.title }} — ScholarForge{% endblock %}
+{% block active_nav %}home{% endblock %}
 
 {% block styles %}
-.citation-box {
-  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px;
-  padding: 11px 14px; font-size: .83rem; color: #1e293b; line-height: 1.6;
-  font-family: 'Georgia', serif; position: relative;
-}
-.copy-btn {
-  position: absolute; top: 8px; right: 8px;
-  background: white; border: 1px solid #e2e8f0; border-radius: 5px;
-  padding: 3px 10px; font-size: .72rem; font-weight: 600; color: #64748b;
-  cursor: pointer; transition: all .13s; font-family: inherit;
-}
-.copy-btn:hover { background: #f1f5f9; color: #0f172a; }
-.copy-btn.copied { color: #15803d; border-color: #86efac; background: #f0fdf4; }
-.summary-box {
-  font-size: .875rem; color: #374151; line-height: 1.7;
-  background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
-  padding: 14px 16px;
-}
-.ev-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; }
-.ev-quote { font-style: italic; color: #374151; font-size: .875rem; line-height: 1.6; margin-bottom: 6px; }
-.ev-meta { font-size: .72rem; color: #94a3b8; }
-.ev-note { font-size: .8rem; color: #475569; margin-top: 6px; background: #f8fafc; border-radius: 5px; padding: 6px 10px; }
-.edit-form { display: none; margin-top: 10px; }
-.edit-form.open { display: block; }
+.cite-box { position: relative; background: var(--surface-muted); border-radius: var(--radius); padding: 12px 70px 12px 14px; font-family: var(--font-reading); font-size: .9375rem; line-height: 1.6; }
+.cite-box .btn { position: absolute; top: 8px; right: 8px; }
+.quote-item { border-left: 2px solid var(--border-strong); padding: 4px 0 4px 12px; margin-bottom: 12px; font-family: var(--font-reading); }
 {% endblock %}
 
-{% block sidebar_nav %}{% set nav_active = 'sources' %}{% include "projects/_project_nav.html" %}{% endblock %}
-
 {% block body %}
-<div class="topbar">
-  <div class="breadcrumb">
-    <a href="/projects">My Projects</a>
-    <span class="breadcrumb-sep">›</span>
-    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
-    <span class="breadcrumb-sep">›</span>
-    <a href="/projects/{{ project.id }}/sources">Sources</a>
-    <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">{{ source.title[:40] }}{% if source.title|length > 40 %}…{% endif %}</span>
-  </div>
-  <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/delete"
-        onsubmit="return confirm('Remove this source?')">
-    <button type="submit" class="btn btn-ghost btn-sm" style="color:#dc2626;border-color:#fecaca;font-size:.72rem">Remove</button>
-  </form>
-</div>
+<div class="reader" id="reader" data-view="doc">
 
-<div class="page-body">
-
-  {% if request.query_params.get("summary_error") == "no_abstract" %}
-  <div class="alert alert-warning">This paper has no abstract saved — can't generate a summary.</div>
-  {% elif request.query_params.get("summary_error") == "ollama_down" %}
-  <div class="alert alert-error"><strong>AI is not running.</strong> Start Ollama with <code>ollama serve</code> and try again.</div>
-  {% endif %}
-
-  {# ── Paper header ── #}
-  <div class="card" style="margin-bottom:20px">
-    <h2 style="font-size:1rem;font-weight:700;margin-bottom:6px;line-height:1.4">{{ source.title }}</h2>
-    <div class="text-sm text-muted">
-      {% if source.authors %}{{ source.authors | join(", ") }}{% endif %}
-      {% if source.year %} · {{ source.year }}{% endif %}
-      {% if source.venue %} · <em>{{ source.venue }}</em>{% endif %}
-    </div>
-    {% if source.url %}
-    <div class="mt-2">
-      <a href="{{ source.url }}" target="_blank" rel="noopener"
-         class="btn btn-primary btn-sm" style="display:inline-flex">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
-        Open PDF / Full Text
-      </a>
-    </div>
-    {% endif %}
-    {% if source.abstract %}
-    <details style="margin-top:12px">
-      <summary class="text-xs text-muted" style="cursor:pointer;user-select:none">Show abstract</summary>
-      <p style="font-size:.8rem;color:#475569;margin-top:8px;line-height:1.6">{{ source.abstract }}</p>
-    </details>
-    {% endif %}
+  <div class="reader-tabs" role="tablist" aria-label="View">
+    <button type="button" role="tab" aria-selected="true" data-view-btn="doc">Paper</button>
+    <button type="button" role="tab" aria-selected="false" data-view-btn="ask">Ask AI</button>
   </div>
 
-  {# ── AI Summary ── #}
-  <div class="card" style="margin-bottom:20px">
-    <div class="flex items-center justify-between gap-3 mb-3">
-      <div class="font-semibold text-sm">Summary</div>
-      <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/summarize">
-        <button type="submit" class="btn btn-ghost btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
-          {% if source.ai_summary %}Regenerate{% else %}Generate with AI{% endif %}
-        </button>
+  {# ── Document ───────────────────────────────────────────────── #}
+  <article class="doc">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/projects">Home</a><span class="sep">/</span>
+      <a href="/projects/{{ project.id }}">{{ project.name }}</a>
+    </nav>
+
+    {% if request.query_params.get("summary_error") == "no_abstract" %}
+    <div class="alert alert-warning">This paper has no abstract saved, so there's nothing to summarize.</div>
+    {% elif request.query_params.get("summary_error") == "ollama_down" %}
+    <div class="alert alert-error"><div><strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and try again.</div></div>
+    {% endif %}
+
+    <h1 class="doc-title">{{ source.title }}</h1>
+    <p class="doc-meta">
+      {% if source.authors %}{{ source.authors | join(", ") }}{% endif %}{% if source.year %} · {{ source.year }}{% endif %}{% if source.venue %} · <em>{{ source.venue }}</em>{% endif %}
+    </p>
+
+    <div class="row" style="margin-top:16px">
+      {% if source.url %}
+      <a class="btn btn-secondary btn-sm" href="{{ source.url }}" target="_blank" rel="noopener">{{ icon("external") }} Open full text</a>
+      {% endif %}
+      <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/status" class="row" style="gap:6px">
+        <label for="rs" class="small muted" style="margin:0;font-weight:500">Status</label>
+        <select id="rs" name="read_status" onchange="this.form.submit()" style="width:auto;height:32px;padding:4px 8px;font-size:.8125rem">
+          <option value="unread" {{ "selected" if source.read_status == "unread" }}>Not started</option>
+          <option value="reading" {{ "selected" if source.read_status == "reading" }}>Reading</option>
+          <option value="done" {{ "selected" if source.read_status == "done" }}>Read</option>
+        </select>
+        <noscript><button class="btn btn-secondary btn-xs" type="submit">Save</button></noscript>
       </form>
     </div>
+
+    {# Plain-English summary #}
+    <div class="doc-label">In plain English</div>
     {% if source.ai_summary %}
-    <div class="summary-box">{{ source.ai_summary }}</div>
-    {% else %}
-    <p class="text-sm text-muted">
-      No summary yet.
-      {% if source.abstract %}Click <strong>Generate with AI</strong> to get a plain-language summary of this paper.{% else %}Add an abstract to this source first.{% endif %}
-    </p>
-    {% endif %}
-  </div>
-
-  {# ── Citations ── #}
-  <div class="card" style="margin-bottom:20px">
-    <div class="font-semibold text-sm mb-3">Citations</div>
-
-    <div style="margin-bottom:14px">
-      <div class="text-xs font-semibold" style="color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">APA</div>
-      <div style="position:relative">
-        <div class="citation-box" id="apa-text">{{ citation_apa }}</div>
-        <button class="copy-btn" onclick="copyText('apa-text', this)">Copy</button>
-      </div>
+    <div class="callout">
+      <div class="callout-label">AI summary — check it against the paper</div>
+      <div>{{ source.ai_summary }}</div>
     </div>
-
-    <div>
-      <div class="text-xs font-semibold" style="color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">IEEE</div>
-      <div style="position:relative">
-        <div class="citation-box" id="ieee-text">{{ citation_ieee }}</div>
-        <button class="copy-btn" onclick="copyText('ieee-text', this)">Copy</button>
-      </div>
-    </div>
-  </div>
-
-  {# ── Notes ── #}
-  <div class="card" style="margin-bottom:20px">
-    <div class="flex items-center gap-2 mb-2">
-      <span class="font-semibold text-sm">My notes on this paper</span>
-      <button class="btn btn-ghost btn-xs" onclick="toggleNoteForm()">Edit</button>
-    </div>
-    {% if source.source_note %}
-    <p id="note-display" class="text-sm" style="color:#475569;background:#f8fafc;padding:8px 12px;border-radius:6px;line-height:1.6">{{ source.source_note }}</p>
-    {% else %}
-    <p id="note-display" class="text-xs text-xxmuted">No notes yet. Click Edit to add your thoughts about this paper.</p>
-    {% endif %}
-    <form id="note-form" class="edit-form" method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/note">
-      <textarea name="source_note" rows="4" placeholder="What did you find useful? What does it contribute to your topic?">{{ source.source_note }}</textarea>
-      <div class="flex gap-2 mt-2">
-        <button type="submit" class="btn btn-primary btn-sm">Save</button>
-        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleNoteForm()">Cancel</button>
-      </div>
+    <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/summarize" data-busy-form style="margin-top:8px">
+      <button type="submit" class="btn btn-quiet btn-xs">Write a new summary</button>
     </form>
-  </div>
+    {% elif source.abstract %}
+    <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/summarize" data-busy-form>
+      <button type="submit" class="btn btn-secondary btn-sm" data-busy-label="Summarizing… (up to a minute)">Summarize this paper</button>
+      <span class="small muted" style="margin-left:8px">A short, simple explanation of the abstract.</span>
+    </form>
+    {% else %}
+    <p class="small muted">Not available — this paper has no abstract saved.</p>
+    {% endif %}
 
-  {# ── Quotes (Evidence) — secondary / collapsible ── #}
-  <details>
-    <summary style="font-size:.83rem;font-weight:600;color:#64748b;cursor:pointer;padding:8px 0;user-select:none">
-      Saved quotes from this paper ({{ evidence_items | length }})
-    </summary>
-    <div style="margin-top:12px">
-      <div class="card" style="margin-bottom:12px">
-        <div class="font-semibold text-sm mb-3">Save a quote</div>
-        <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/evidence">
-          <div class="field">
-            <label>Quote <span style="color:#dc2626">*</span></label>
-            <textarea name="quote" rows="3" placeholder="Paste the exact sentence or finding…" required></textarea>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="field">
-              <label>Page / section</label>
-              <input type="text" name="page_reference" placeholder="p. 5, §3.2…">
-            </div>
-            <div class="field">
-              <label>Your note</label>
-              <input type="text" name="student_note" placeholder="Why is this useful?">
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-sm">Save quote</button>
-        </form>
-      </div>
+    {# The document text #}
+    <div class="doc-label">Abstract</div>
+    {% if source.abstract %}
+    <div class="doc-body"><p>{{ source.abstract }}</p></div>
+    {% else %}
+    <div class="notice notice-warning">
+      <div>No abstract was saved for this paper{% if source.url %}. Use <strong>Open full text</strong> to read it on the publisher's site{% endif %}.</div>
+    </div>
+    {% endif %}
 
-      {% for ev in evidence_items %}
-      <div class="ev-card">
-        <p class="ev-quote">"{{ ev.quote }}"</p>
-        {% if ev.page_reference %}<span class="ev-meta">{{ ev.page_reference }}</span>{% endif %}
-        {% if ev.student_note %}<div class="ev-note">{{ ev.student_note }}</div>{% endif %}
-        <div class="flex gap-2 mt-2 flex-wrap">
-          <button class="btn btn-ghost btn-xs" onclick="toggleEdit('{{ ev.id }}')">Edit</button>
-          <form method="post" action="/projects/{{ project.id }}/evidence/{{ ev.id }}/delete" style="display:inline">
-            <input type="hidden" name="source_id" value="{{ source.id }}">
-            <button type="submit" class="btn btn-ghost btn-xs" style="color:#dc2626;border-color:#fecaca"
-                    onclick="return confirm('Delete this quote?')">Delete</button>
+    {# Notes about this paper #}
+    <div class="doc-label">Your notes on this paper</div>
+    {% if linked_notes or source.source_note %}
+    <div class="list">
+      {% for n in linked_notes %}
+      <a class="list-row" href="/projects/{{ project.id }}/notes/{{ n.id }}?back=/projects/{{ project.id }}/sources/{{ source.id }}">
+        {{ icon("notes") }}
+        <div class="grow">
+          <div class="list-title">{{ n.title or "Untitled note" }}</div>
+          <div class="note-snippet">{{ n.body }}</div>
+        </div>
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      {% endfor %}
+      {% if source.source_note %}
+      <div class="list-row"><div class="grow"><div class="list-title">Earlier note</div><div class="note-snippet">{{ source.source_note }}</div></div></div>
+      {% endif %}
+    </div>
+    {% else %}
+    <p class="small muted" id="no-notes-msg">No notes yet. Save an answer from the assistant, or write your own.</p>
+    {% endif %}
+    <div style="margin-top:10px"><a class="btn btn-secondary btn-sm" href="/projects/{{ project.id }}/notes/new?source_id={{ source.id }}&back=/projects/{{ project.id }}/sources/{{ source.id }}">{{ icon("plus") }} Write a note</a></div>
+
+    {# Less common actions #}
+    <div class="stack" style="margin-top:32px">
+      <details class="disclosure">
+        <summary>Cite this paper</summary>
+        <div class="disclosure-body stack">
+          <div><div class="label">IEEE</div><div class="cite-box"><span id="cite-ieee">{{ citation_ieee }}</span><button type="button" class="btn btn-secondary btn-xs" data-copy="cite-ieee">Copy</button></div></div>
+          <div><div class="label">APA</div><div class="cite-box"><span id="cite-apa">{{ citation_apa }}</span><button type="button" class="btn btn-secondary btn-xs" data-copy="cite-apa">Copy</button></div></div>
+        </div>
+      </details>
+
+      <details class="disclosure">
+        <summary>Saved quotes <span class="faint" style="font-weight:400">· {{ evidence_items | length }}</span></summary>
+        <div class="disclosure-body">
+          <p class="small muted" style="margin-bottom:12px">Copy exact sentences you may want to quote in your report.</p>
+          {% for ev in evidence_items %}
+          <div class="quote-item">
+            “{{ ev.quote }}”{% if ev.page_reference %} <span class="small faint" style="font-family:var(--font-ui)">— {{ ev.page_reference }}</span>{% endif %}
+            <form method="post" action="/projects/{{ project.id }}/evidence/{{ ev.id }}/delete" style="display:inline" onsubmit="return confirm('Delete this quote? This cannot be undone.')">
+              <input type="hidden" name="source_id" value="{{ source.id }}">
+              <button type="submit" class="btn btn-quiet btn-xs">Delete</button>
+            </form>
+          </div>
+          {% endfor %}
+          <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/evidence">
+            <div class="field"><label for="qv">Quote</label><textarea id="qv" name="quote" rows="2" required placeholder="Paste the exact sentence…"></textarea></div>
+            <div class="field"><label for="qp">Page or section <span class="hint" style="display:inline">(optional)</span></label><input id="qp" type="text" name="page_reference" placeholder="e.g. p. 5"></div>
+            <button type="submit" class="btn btn-secondary btn-sm">Save quote</button>
           </form>
         </div>
-        <form id="edit-{{ ev.id }}" class="edit-form" method="post" action="/projects/{{ project.id }}/evidence/{{ ev.id }}/edit">
-          <input type="hidden" name="source_id" value="{{ source.id }}">
-          <div class="field mt-2">
-            <label>Quote</label>
-            <textarea name="quote" rows="3" required>{{ ev.quote }}</textarea>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="field">
-              <label>Page reference</label>
-              <input type="text" name="page_reference" value="{{ ev.page_reference }}">
-            </div>
-            <div class="field">
-              <label>Your note</label>
-              <input type="text" name="student_note" value="{{ ev.student_note }}">
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <button type="submit" class="btn btn-primary btn-sm">Save</button>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('{{ ev.id }}')">Cancel</button>
-          </div>
-        </form>
+      </details>
+
+      <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/delete"
+            onsubmit="return confirm('Remove this paper from “{{ project.name }}”? Its saved quotes will be deleted too. Your notes stay.')">
+        <button type="submit" class="btn btn-danger btn-sm">Remove paper from project</button>
+      </form>
+    </div>
+  </article>
+
+  {# ── AI assistant ───────────────────────────────────────────── #}
+  <aside class="assistant" aria-labelledby="ask-title">
+    <div class="assistant-head">
+      {{ icon("ask") }}
+      <h2 id="ask-title">Ask about this paper</h2>
+      <button type="button" class="btn btn-quiet btn-xs btn-hide" data-toggle-assistant title="Hide assistant">{{ icon("close") }}</button>
+    </div>
+    <div class="assistant-body" id="qa-thread" aria-live="polite">
+      <p class="small muted" id="qa-intro">
+        Ask anything about this paper. Answers use <strong>only this paper's abstract</strong>, and show the sentence they're based on when one is found.
+      </p>
+      {% if source.abstract %}
+      <div class="suggestions" id="qa-suggestions">
+        <button type="button" class="suggestion">What is this paper about?</button>
+        <button type="button" class="suggestion">What did the authors find?</button>
+        <button type="button" class="suggestion">How did they do the study?</button>
       </div>
       {% else %}
-      <p class="text-sm text-muted" style="padding:8px 0">No quotes saved yet.</p>
-      {% endfor %}
+      <div class="notice notice-warning small" style="margin-top:12px">This paper has no abstract saved, so the assistant has nothing to read yet.</div>
+      {% endif %}
     </div>
-  </details>
+    <form class="assistant-foot" id="ask-form">
+      <label for="ask-input" class="small" style="font-weight:500">Your question</label>
+      <textarea id="ask-input" name="question" rows="2" maxlength="500"
+                placeholder="e.g. What problem does this paper solve?" {{ "disabled" if not source.abstract }}></textarea>
+      <div class="row" style="margin-top:8px">
+        <span class="small faint">Enter to send · Shift+Enter for a new line</span>
+        <span class="spacer"></span>
+        <button type="submit" class="btn btn-primary btn-sm" id="ask-btn" {{ "disabled" if not source.abstract }}>Ask</button>
+      </div>
+    </form>
+  </aside>
 
+  <button type="button" class="btn btn-primary reader-toggle" data-toggle-assistant hidden>{{ icon("ask") }} Ask AI</button>
 </div>
 
 <script>
-function toggleNoteForm() { document.getElementById('note-form').classList.toggle('open'); }
-function toggleEdit(id) { document.getElementById('edit-' + id).classList.toggle('open'); }
-function copyText(id, btn) {
-  const text = document.getElementById(id).innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = 'Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+(function () {
+  var reader = document.getElementById("reader");
+  var askUrl = "/projects/{{ project.id }}/sources/{{ source.id }}/ask";
+  var saveUrl = "/projects/{{ project.id }}/sources/{{ source.id }}/save-note";
+  var thread = document.getElementById("qa-thread");
+  var form = document.getElementById("ask-form");
+  var input = document.getElementById("ask-input");
+  var btn = document.getElementById("ask-btn");
+  var floatBtn = document.querySelector(".reader-toggle");
+
+  /* desktop: show / hide the assistant (remembered per browser) */
+  function setHidden(h) {
+    reader.classList.toggle("assistant-hidden", h);
+    floatBtn.hidden = !h;
+    try { localStorage.setItem("sf-assistant-hidden", h ? "1" : "0"); } catch (e) {}
+  }
+  try { if (localStorage.getItem("sf-assistant-hidden") === "1") setHidden(true); } catch (e) {}
+  document.querySelectorAll("[data-toggle-assistant]").forEach(function (b) {
+    b.addEventListener("click", function () { setHidden(!reader.classList.contains("assistant-hidden")); });
   });
-}
+
+  /* mobile: Paper / Ask AI tabs */
+  document.querySelectorAll("[data-view-btn]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      reader.dataset.view = b.dataset.viewBtn;
+      document.querySelectorAll("[data-view-btn]").forEach(function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+      window.scrollTo(0, 0);
+    });
+  });
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function post(url, data) {
+    return fetch(url, { method: "POST", body: new URLSearchParams(data), headers: { "Accept": "application/json" } })
+      .then(function (r) { return r.json().catch(function () { return { error: "Unexpected response from the server." }; }); });
+  }
+
+  function saveNote(question, res, holder) {
+    var body = res.answer + "\n\nSource: " + res.source_label + (res.quote ? "\n“" + res.quote + "”" : "");
+    holder.textContent = "Saving…";
+    post(saveUrl, { title: question, body: body }).then(function (r) {
+      holder.textContent = "";
+      if (r.ok) {
+        holder.appendChild(el("span", "chip chip-success", "Saved to notes"));
+        var a = el("a", "link-btn", "View note"); a.href = r.note_url; holder.appendChild(a);
+      } else {
+        holder.appendChild(el("span", "small", r.error || "Could not save. Try again."));
+      }
+    });
+  }
+
+  function ask(question) {
+    question = question.trim();
+    if (!question) { input.focus(); return; }
+    var sug = document.getElementById("qa-suggestions"); if (sug) sug.remove();
+    var item = el("div", "qa");
+    item.appendChild(el("div", "qa-q", question));
+    var ans = el("div", "qa-a");
+    var spin = el("span", "small muted"); spin.appendChild(el("span", "spinner")); spin.appendChild(document.createTextNode("  Reading the abstract… this can take up to a minute."));
+    ans.appendChild(spin);
+    item.appendChild(ans);
+    thread.appendChild(item);
+    item.scrollIntoView({ block: "end", behavior: "smooth" });
+    input.value = ""; btn.disabled = true; btn.setAttribute("aria-busy", "true");
+
+    post(askUrl, { question: question }).then(function (res) {
+      ans.textContent = "";
+      if (res.error) {
+        ans.appendChild(el("div", "notice notice-error small", res.error));
+        return;
+      }
+      ans.textContent = res.answer;
+      var src = el("div", "qa-source");
+      src.appendChild(el("div", null, "Based on: " + res.source_label));
+      if (res.quote) { var q = el("q", null, res.quote); src.appendChild(q); }
+      item.appendChild(src);
+      var actions = el("div", "qa-actions");
+      var save = el("button", "btn btn-secondary btn-xs"); save.type = "button";
+      save.textContent = "Save as note";
+      save.addEventListener("click", function () { saveNote(question, res, actions); });
+      actions.appendChild(save);
+      item.appendChild(actions);
+    }).catch(function () {
+      ans.textContent = "";
+      ans.appendChild(el("div", "notice notice-error small", "Couldn't reach ScholarForge. Check that the app is still running, then try again."));
+    }).finally(function () {
+      btn.disabled = false; btn.removeAttribute("aria-busy");
+      item.scrollIntoView({ block: "end", behavior: "smooth" });
+    });
+  }
+
+  form.addEventListener("submit", function (e) { e.preventDefault(); ask(input.value); });
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(input.value); } });
+  thread.addEventListener("click", function (e) { if (e.target.classList.contains("suggestion")) ask(e.target.textContent); });
+
+  /* copy citation */
+  document.querySelectorAll("[data-copy]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var t = document.getElementById(b.dataset.copy).innerText;
+      navigator.clipboard.writeText(t).then(function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1500); });
+    });
+  });
+
+  /* long-running form posts: show progress on the button */
+  document.querySelectorAll("[data-busy-form]").forEach(function (f) {
+    f.addEventListener("submit", function () {
+      var b = f.querySelector("button[type=submit]");
+      if (b) { b.setAttribute("aria-busy", "true"); b.textContent = b.dataset.busyLabel || "Working…"; }
+    });
+  });
+})();
 </script>
 {% endblock %}

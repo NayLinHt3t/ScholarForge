@@ -78,6 +78,8 @@ def update_source(
     source_note: str | None = None,
     access_status: str | None = None,
     ai_summary: str | None = None,
+    last_opened_at: datetime | None = None,
+    questions_asked: int | None = None,
 ) -> None:
     updates: dict = {}
     if title is not None:
@@ -104,6 +106,10 @@ def update_source(
         updates["access_status"] = access_status
     if ai_summary is not None:
         updates["ai_summary"] = ai_summary
+    if last_opened_at is not None:
+        updates["last_opened_at"] = last_opened_at
+    if questions_asked is not None:
+        updates["questions_asked"] = questions_asked
     if updates:
         _saved_ref(db, project_id).document(resource_id).update(updates)
 

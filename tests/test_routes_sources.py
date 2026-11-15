@@ -141,6 +141,6 @@ class TestDeleteSource:
         ):
             resp = client.post("/projects/p1/sources/s1/delete")
         assert resp.status_code == 303
-        assert resp.headers["location"] == "/projects/p1/sources"
+        assert resp.headers["location"] == "/projects/p1"  # back to the project workspace
         mock_del_ev.assert_called_once()
         mock_del.assert_called_once()

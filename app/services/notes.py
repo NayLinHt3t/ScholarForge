@@ -16,6 +16,8 @@ def create_note(
     user_id: str,
     body: str,
     title: str = "",
+    source_id: str | None = None,
+    source_title: str = "",
 ) -> Note:
     doc_ref = _ref(db, project_id).document()
     note = Note(
@@ -24,6 +26,8 @@ def create_note(
         user_id=user_id,
         title=title.strip(),
         body=body.strip(),
+        source_id=source_id,
+        source_title=source_title,
     )
     doc_ref.set(note.to_firestore())
     return note
@@ -40,13 +44,19 @@ def get_note(db: firestore.Client, project_id: str, note_id: str) -> Note | None
 
 
 def update_note(
-    db: firestore.Client, project_id: str, note_id: str, title: str, body: str
+    db: firestore.Client, project_id: str, note_id: str, title: str, body: str,
+    **link,
 ) -> None:
-    _ref(db, project_id).document(note_id).update({
+    """Update a note. Pass source_id=/source_title= to change the linked paper."""
+    updates = {
         "title": title.strip(),
         "body": body.strip(),
         "updated_at": datetime.now(timezone.utc),
-    })
+    }
+    for key in ("source_id", "source_title"):
+        if key in link:
+            updates[key] = link[key]
+    _ref(db, project_id).document(note_id).update(updates)
 
 
 def delete_note(db: firestore.Client, project_id: str, note_id: str) -> None:

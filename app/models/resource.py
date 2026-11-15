@@ -27,6 +27,9 @@ class SavedResource(BaseModel):
     source_note: str = ""                   # student's general note on this source
     access_status: str = "unknown"          # open_access | paywalled | unknown
     ai_summary: str = ""                    # AI-generated plain-language summary
+    # simplified-UI fields
+    last_opened_at: datetime | None = None  # for "Recently opened" on Home
+    questions_asked: int = 0                # reader assistant usage (getting-started step)
 
     def to_firestore(self) -> dict:
         return self.model_dump(exclude={"id"})
@@ -40,4 +43,6 @@ class SavedResource(BaseModel):
         data.setdefault("source_note", "")
         data.setdefault("access_status", "unknown")
         data.setdefault("ai_summary", "")
+        data.setdefault("last_opened_at", None)
+        data.setdefault("questions_asked", 0)
         return cls(id=doc.id, **data)

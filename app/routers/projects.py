@@ -7,17 +7,38 @@ from app.database import get_db
 from app.dependencies import require_auth
 from app.models import User
 from app.services import library as library_service
-from app.services import outline as outline_service
+from app.services import notes as notes_service
+from app.services import overview as overview_service
 from app.services import projects as project_service
 from app.services.citations import (
     STYLES as CITATION_STYLES,
     build_bibtex_all,
-    format_bibtex,
-    format_one,
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 templates = Jinja2Templates(directory="app/templates")
+
+
+def _home(request: Request, user: User, db, error: str | None = None, status_code: int = 200):
+    """Home screen: welcome, getting-started steps, recent projects, recently opened papers."""
+    projects = project_service.list_projects(db, user.id)
+    ov = overview_service.gather(db, user.id, projects=projects)
+    steps = ov.getting_started()
+    return templates.TemplateResponse(
+        "home.html",
+        {
+            "request": request,
+            "user": user,
+            "overview": ov,
+            "projects": ov.projects,
+            "recent_papers": ov.recently_opened[:5],
+            "project_names": ov.project_names,
+            "steps": steps,
+            "show_steps": not all(s["done"] for s in steps),
+            "error": error,
+        },
+        status_code=status_code,
+    )
 
 
 @router.get("")
@@ -26,11 +47,7 @@ async def projects_list(
     user: User = Depends(require_auth),
     db: firestore.Client = Depends(get_db),
 ):
-    projects = project_service.list_projects(db, user.id)
-    return templates.TemplateResponse(
-        "projects/list.html",
-        {"request": request, "user": user, "projects": projects},
-    )
+    return _home(request, user, db)
 
 
 @router.post("")
@@ -43,14 +60,10 @@ async def create_project(
 ):
     name = name.strip()
     if not name:
-        projects = project_service.list_projects(db, user.id)
-        return templates.TemplateResponse(
-            "projects/list.html",
-            {"request": request, "user": user, "projects": projects, "error": "Project name cannot be empty."},
-            status_code=400,
-        )
-    project_service.create_project(db, user.id, name, research_question=research_question)
-    return RedirectResponse(url="/projects", status_code=303)
+        return _home(request, user, db, error="Project name cannot be empty.", status_code=400)
+    project = project_service.create_project(db, user.id, name, research_question=research_question)
+    # Take the student straight into the new project — the next step lives there.
+    return RedirectResponse(url=f"/projects/{project.id}", status_code=303)
 
 
 @router.get("/{project_id}")
@@ -63,14 +76,16 @@ async def project_detail(
     project = project_service.get_project(db, project_id)
     if not project or project.user_id != user.id:
         return RedirectResponse(url="/projects", status_code=303)
-    counts = project_service.get_dashboard_counts(db, project_id)
+    papers = library_service.list_resources(db, project_id)
+    notes = notes_service.list_notes(db, project_id)
     return templates.TemplateResponse(
         "projects/detail.html",
         {
             "request": request,
             "user": user,
             "project": project,
-            "counts": counts,
+            "papers": papers,
+            "notes": notes,
         },
     )
 
@@ -136,7 +151,7 @@ async def confirm_delete_page(
         return RedirectResponse(url="/projects", status_code=303)
     return templates.TemplateResponse(
         "projects/confirm_delete.html",
-        {"request": request, "project": project},
+        {"request": request, "user": user, "project": project},
     )
 
 

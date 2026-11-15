@@ -1,47 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Search — {{ project.name }} — ScholarForge{% endblock %}
+{% from "_ui.html" import icon, authors_short %}
+{% block title %}Find papers — {{ project.name }} — ScholarForge{% endblock %}
+{% block active_nav %}home{% endblock %}
 
 {% block styles %}
-.search-topbar {
-  background: white; border-bottom: 1px solid #e2e8f0;
-  padding: 12px 28px; position: sticky; top: 0; z-index: 10; flex-shrink: 0;
-}
 .search-bar {
   display: flex; align-items: center; gap: 10px;
-  background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 9px;
+  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-lg);
   padding: 0 4px 0 14px; transition: border-color .13s, box-shadow .13s;
 }
 .search-bar:focus-within {
-  border-color: #3b82f6;
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(59,130,246,.1);
   background: white;
 }
-.search-bar svg { color: #94a3b8; flex-shrink: 0; width: 17px; height: 17px; }
+.search-bar svg { color: var(--text-faint); flex-shrink: 0; width: 17px; height: 17px; }
 .search-bar textarea {
   flex: 1; border: none; background: transparent; outline: none;
-  font-size: .9rem; color: #0f172a; resize: none; padding: 11px 0;
+  font-size: .9rem; color: var(--text); resize: none; padding: 11px 0;
   font-family: inherit; line-height: 1.4; min-height: 42px;
 }
-.search-bar textarea::placeholder { color: #94a3b8; }
+.search-bar textarea::placeholder { color: var(--text-faint); }
 .search-bar .search-btn {
-  background: #3b82f6; color: white; border: none; border-radius: 6px;
+  background: var(--accent); color: white; border: none; border-radius: 6px;
   padding: 8px 18px; font-size: .845rem; font-weight: 600; cursor: pointer;
   transition: background .13s; white-space: nowrap; flex-shrink: 0;
 }
-.search-bar .search-btn:hover { background: #2563eb; }
+.search-bar .search-btn:hover { background: var(--accent-hover); }
 
 .paper-card {
-  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
   padding: 18px 20px; margin-bottom: 10px;
   transition: border-color .13s, box-shadow .13s;
 }
-.paper-card:hover { border-color: #bfdbfe; box-shadow: 0 2px 8px rgba(59,130,246,.07); }
+.paper-card:hover { border-color: #cdd9f8; box-shadow: 0 2px 8px rgba(59,130,246,.07); }
 
-.paper-title { font-weight: 700; font-size: .95rem; color: #0f172a; line-height: 1.4; }
-a.paper-title:hover { color: #3b82f6; }
-.paper-meta { font-size: .77rem; color: #94a3b8; margin-top: 5px; }
+.paper-title { font-weight: 700; font-size: .95rem; color: var(--text); line-height: 1.4; }
+a.paper-title:hover { color: var(--accent); }
+.paper-meta { font-size: .77rem; color: var(--text-faint); margin-top: 5px; }
 .paper-abstract {
-  font-size: .825rem; color: #374151; line-height: 1.6; margin-top: 9px;
+  font-size: .825rem; color: var(--text); line-height: 1.6; margin-top: 9px;
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -49,42 +47,44 @@ a.paper-title:hover { color: #3b82f6; }
 .source-badge {
   font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; white-space: nowrap;
 }
-.source-semantic_scholar { background: #ede9fe; color: #6d28d9; }
-.source-openalex         { background: #dcfce7; color: #15803d; }
+.source-semantic_scholar { background: var(--accent-soft); color: var(--accent-strong); }
+.source-openalex         { background: var(--success-soft); color: var(--success); }
 {% endblock %}
 
-{% block sidebar_nav %}{% set nav_active = 'search' %}{% include "projects/_project_nav.html" %}{% endblock %}
 
 {% block body %}
-{# Search topbar — replaces standard topbar #}
-<div class="search-topbar">
-  <div class="breadcrumb" style="margin-bottom:10px">
-    <a href="/projects">My Projects</a>
-    <span class="breadcrumb-sep">›</span>
-    <a href="/projects/{{ project.id }}">{{ project.name }}</a>
-    <span class="breadcrumb-sep">›</span>
-    <span class="breadcrumb-current">Search Papers</span>
+<div class="page" style="padding-bottom:0">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/projects">Home</a><span class="sep">/</span>
+    <a href="/projects/{{ project.id }}">{{ project.name }}</a><span class="sep">/</span><span>Find papers</span>
+  </nav>
+  <div class="page-header" style="margin-bottom:16px">
+    <div>
+      <h1>Find papers</h1>
+      <p>Describe what you're looking for in your own words — a full sentence works better than a few keywords.</p>
+    </div>
   </div>
-  <form method="get" action="/projects/{{ project.id }}/search">
+  <form method="get" action="/projects/{{ project.id }}/search" role="search" data-busy-form>
     <div class="search-bar">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
-      <textarea name="q" rows="1"
-                placeholder="Describe your research idea — e.g. how remote work affects team trust in software companies"
+      {{ icon("search") }}
+      <textarea name="q" rows="1" aria-label="What are you looking for?"
+                placeholder="e.g. how remote work affects trust in software teams"
                 oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();this.form.requestSubmit();}"
       >{{ q }}</textarea>
-      <button class="search-btn" type="submit">Search</button>
+      <button class="search-btn" type="submit" data-busy-label="Searching…">Search</button>
     </div>
   </form>
 </div>
 
-<div class="page-body">
+<div class="page" style="padding-top:20px">
   {% if flash_saved %}
   <div class="alert alert-success">
-    Paper saved to your library. <a href="/projects/{{ project.id }}/sources" style="font-weight:600">View sources →</a>
+    <div>Saved to <strong>{{ project.name }}</strong>. Keep searching, or <a href="/projects/{{ project.id }}">go back to the project</a> to start reading.</div>
   </div>
   {% endif %}
   {% if flash_duplicate %}
-  <div class="alert alert-warning">That paper is already in your library.</div>
+  <div class="alert alert-warning">That paper is already saved in this project.</div>
   {% endif %}
   {% if request.query_params.get("url_error") %}
   <div class="alert alert-error">
@@ -98,23 +98,21 @@ a.paper-title:hover { color: #3b82f6; }
   </div>
   {% endif %}
 
-  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-    <span style="font-size:.8rem;color:#64748b;white-space:nowrap">
-      <strong style="color:#0f172a">Add by URL</strong> — paste a Semantic Scholar paper link:
-    </span>
-    <form method="post" action="/projects/{{ project.id }}/search/add-by-url"
-          style="display:flex;gap:8px;flex:1;min-width:280px">
-      <input type="url" name="paper_url" required
-             placeholder="https://www.semanticscholar.org/paper/…"
-             style="flex:1;padding:7px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:.85rem;outline:none;min-width:0">
-      <button type="submit" class="btn btn-primary btn-sm">Add</button>
-    </form>
-  </div>
+  <details class="disclosure" style="margin-bottom:20px" {{ "open" if request.query_params.get("url_error") }}>
+    <summary>Already have a link to a paper?</summary>
+    <div class="disclosure-body">
+      <form method="post" action="/projects/{{ project.id }}/search/add-by-url" class="row">
+        <input type="url" name="paper_url" required aria-label="Semantic Scholar paper link"
+               placeholder="Paste a Semantic Scholar link: https://www.semanticscholar.org/paper/…" style="flex:1;min-width:240px">
+        <button type="submit" class="btn btn-primary btn-sm">Add paper</button>
+      </form>
+      <p class="hint">Not on Semantic Scholar? <a href="/projects/{{ project.id }}/sources">Add the paper by hand</a>.</p>
+    </div>
+  </details>
 
   {% if ollama_down %}
   <div class="alert alert-error">
-    <strong>Ollama is not running.</strong>&nbsp;
-    Start it with <code>ollama serve</code> and try searching again.
+    <div><strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and search again.</div>
   </div>
   {% endif %}
 
@@ -136,7 +134,7 @@ a.paper-title:hover { color: #3b82f6; }
 
   {% if results %}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <span class="text-sm text-muted">{{ results | length }} result(s) for <strong style="color:#0f172a">"{{ q }}"</strong></span>
+    <span class="text-sm text-muted">{{ results | length }} paper{{ "s" if results | length != 1 }} matching <strong style="color:var(--text)">"{{ q }}"</strong></span>
   </div>
 
   {% for r in results %}
@@ -157,9 +155,6 @@ a.paper-title:hover { color: #3b82f6; }
         <p class="paper-abstract">{{ r.abstract }}</p>
         {% endif %}
       </div>
-      <span class="source-badge source-{{ r.source }}" style="flex-shrink:0;margin-top:2px">
-        {{ "Semantic Scholar" if r.source == "semantic_scholar" else "OpenAlex" }}
-      </span>
     </div>
 
     <div class="paper-footer">
@@ -180,8 +175,7 @@ a.paper-title:hover { color: #3b82f6; }
         <input type="hidden" name="source"    value="{{ r.source }}">
         <input type="hidden" name="return_to" value="{{ current_url }}">
         <button type="submit" class="btn btn-primary btn-sm">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          Save to library
+          {{ icon("plus") }} Save to project
         </button>
       </form>
     </div>
@@ -189,16 +183,24 @@ a.paper-title:hover { color: #3b82f6; }
   {% endfor %}
 
   {% elif q and not ollama_down %}
-  <div class="card empty-state" style="margin-top:24px">
-    <div class="empty-icon">🔍</div>
-    <p>No papers found for that idea.<br>Try different keywords or a broader description.</p>
+  <div class="empty">
+    <h3>No papers found</h3>
+    <p>Try describing your idea differently, or use broader words.</p>
   </div>
   {% elif not q %}
-  <div style="margin-top:32px;text-align:center;color:#94a3b8;font-size:.875rem">
-    <div style="font-size:2rem;margin-bottom:12px">🔍</div>
-    <p>Type your research idea above and press <strong style="color:#64748b">Search</strong>.</p>
-    <p style="margin-top:6px;font-size:.8rem">Results are ranked by semantic similarity to your idea.</p>
+  <div class="empty">
+    {{ icon("search") }}
+    <h3>What is your topic?</h3>
+    <p>Type a sentence about what you want to learn, then press Search. The closest matching papers are shown first.</p>
   </div>
   {% endif %}
 </div>
+<script>
+document.querySelectorAll("[data-busy-form]").forEach(function (f) {
+  f.addEventListener("submit", function () {
+    var b = f.querySelector("button[type=submit]");
+    if (b) { b.setAttribute("aria-busy", "true"); b.textContent = b.dataset.busyLabel || "Working…"; }
+  });
+});
+</script>
 {% endblock %}

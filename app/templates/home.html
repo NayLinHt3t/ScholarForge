@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_ui.html" import icon, empty, authors_short %}
+{% block title %}Home — ScholarForge{% endblock %}
+{% block active_nav %}home{% endblock %}
+
+{% block body %}
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Welcome{% if projects %} back{% endif %}</h1>
+      <p>{% if projects %}Pick up where you left off, or start something new.{% else %}ScholarForge helps you find papers, understand them, and keep your notes in one place.{% endif %}</p>
+    </div>
+    <button type="button" class="btn btn-primary" data-open-new-project>{{ icon("plus") }} New project</button>
+  </div>
+
+  {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+  {% if show_steps %}
+  <section class="section" style="margin-top:0" aria-labelledby="gs-title">
+    <div class="section-head"><h2 id="gs-title">Getting started</h2><span class="small muted">{{ steps | selectattr("done") | list | length }} of 4 done</span></div>
+    <ol class="list steps">
+      {% for s in steps %}
+      <li class="step {{ 'done' if s.done }} {{ 'current' if s.current }}">
+        <span class="step-dot">{% if s.done %}{{ icon("check", "icon") }}{% else %}{{ loop.index }}{% endif %}</span>
+        <span class="step-text">{{ s.label }}</span>
+        {% if s.current and s.href %}
+          {% if s.href == "?new=1" %}
+          <button type="button" class="btn btn-primary btn-sm" data-open-new-project>{{ s.action }}</button>
+          {% else %}
+          <a class="btn btn-primary btn-sm" href="{{ s.href }}">{{ s.action }}</a>
+          {% endif %}
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <section class="section" aria-labelledby="rp-title">
+    <div class="section-head"><h2 id="rp-title">Recent projects</h2></div>
+    {% if projects %}
+    <div class="list">
+      {% for s in projects[:6] %}
+      <a class="list-row" href="/projects/{{ s.project.id }}">
+        {{ icon("folder") }}
+        <div class="grow">
+          <div class="list-title">{{ s.project.name }}</div>
+          <div class="list-meta">
+            {{ s.papers | length }} paper{{ "s" if s.papers | length != 1 }} · {{ s.notes | length }} note{{ "s" if s.notes | length != 1 }}{% if s.project.research_question %} · {{ s.project.research_question }}{% endif %}
+          </div>
+        </div>
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+      {% call empty("folder", "No projects yet", "Create a project for an assignment or topic. You'll add papers and notes to it.") %}
+        <button type="button" class="btn btn-primary" data-open-new-project>{{ icon("plus") }} Create your first project</button>
+      {% endcall %}
+    {% endif %}
+  </section>
+
+  {% if recent_papers %}
+  <section class="section" aria-labelledby="ro-title">
+    <div class="section-head"><h2 id="ro-title">Recently opened</h2><a class="link-btn" href="/library">Open My Library</a></div>
+    <div class="list">
+      {% for p in recent_papers %}
+      <a class="list-row" href="/projects/{{ p.project_id }}/sources/{{ p.id }}">
+        {{ icon("file") }}
+        <div class="grow">
+          <div class="list-title">{{ p.title }}</div>
+          <div class="list-meta">{{ authors_short(p.authors) }}{% if p.year %} · {{ p.year }}{% endif %} · {{ project_names.get(p.project_id, "") }}</div>
+        </div>
+        {{ icon("chevron", "icon chev") }}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

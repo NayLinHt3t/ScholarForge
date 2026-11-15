@@ -3,45 +3,44 @@
 
 {% block styles %}
 .section-card {
-  background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+  background: white; border: 1px solid var(--border); border-radius: 10px;
   margin-bottom: 12px; overflow: hidden;
 }
 .section-card-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 11px 18px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+  padding: 11px 18px; background: var(--surface-muted); border-bottom: 1px solid var(--border);
   gap: 12px;
 }
-.section-card-label { font-weight: 700; font-size: .85rem; color: #0f172a; }
+.section-card-label { font-weight: 700; font-size: .85rem; color: var(--text); }
 .section-actions { display: flex; gap: 6px; align-items: center; }
 .section-body {
   padding: 16px 18px; font-size: .855rem; line-height: 1.75;
-  color: #374151; white-space: pre-wrap; word-break: break-word;
+  color: var(--text); white-space: pre-wrap; word-break: break-word;
 }
 .regen-banner {
-  background: #f0fdf4; border: 1px solid #86efac; color: #15803d;
+  background: var(--success-soft); border: 1px solid #bfe2cd; color: var(--success);
   padding: 10px 16px; border-radius: 8px; font-size: .845rem; margin-bottom: 16px;
 }
 .outline-meta {
   display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  font-size: .78rem; color: #94a3b8; margin-bottom: 20px;
+  font-size: .78rem; color: var(--text-faint); margin-bottom: 20px;
 }
 .draft-callout {
-  background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px;
+  background: var(--accent-soft); border: 1px solid #cdd9f8; border-radius: 6px;
   padding: 10px 14px; margin-top: 10px;
 }
 .draft-callout-label {
-  font-size: .73rem; font-weight: 700; color: #2563eb; margin-bottom: 4px;
+  font-size: .73rem; font-weight: 700; color: var(--accent-hover); margin-bottom: 4px;
   letter-spacing: .02em; text-transform: uppercase;
 }
-.draft-callout-body { font-size: .855rem; color: #374151; font-style: italic; line-height: 1.65; }
+.draft-callout-body { font-size: .855rem; color: var(--text); font-style: italic; line-height: 1.65; }
 {% endblock %}
 
-{% block sidebar_nav %}{% set nav_active = 'outline' %}{% include "projects/_project_nav.html" %}{% endblock %}
 
 {% block body %}
 <div class="topbar">
   <div class="breadcrumb">
-    <a href="/projects">My Projects</a>
+    <a href="/projects">Home</a>
     <span class="breadcrumb-sep">›</span>
     <a href="/projects/{{ project.id }}">{{ project.name }}</a>
     <span class="breadcrumb-sep">›</span>
@@ -65,7 +64,7 @@
     <form method="post" action="/projects/{{ project.id }}/outlines/{{ outline.id }}/delete"
           onsubmit="return confirm('Delete this outline?')">
       <button type="submit" class="btn btn-ghost btn-sm"
-              style="color:#dc2626;border-color:#fecaca">Delete</button>
+              style="color:var(--danger);border-color:#efc4bf">Delete</button>
     </form>
   </div>
 </div>
@@ -92,7 +91,7 @@
   {% endif %}
 
   <div style="margin-bottom:20px">
-    <h1 style="font-size:1.1rem;font-weight:800;color:#0f172a;margin-bottom:8px">
+    <h1 style="font-size:1.1rem;font-weight:800;color:var(--text);margin-bottom:8px">
       {{ outline.label or "Generated Outline" }}
     </h1>
     <div class="outline-meta">
@@ -133,7 +132,7 @@
         <form method="post"
               action="/projects/{{ project.id }}/outlines/{{ outline.id }}/sections/{{ key }}/edit">
           <textarea name="content" rows="8"
-                    style="width:100%;font-size:.855rem;line-height:1.75;border:1.5px solid #3b82f6;border-radius:6px;padding:8px 10px;resize:vertical;font-family:inherit;box-sizing:border-box">{{ outline.sections[key] }}</textarea>
+                    style="width:100%;font-size:.855rem;line-height:1.75;border:1.5px solid var(--accent);border-radius:6px;padding:8px 10px;resize:vertical;font-family:inherit;box-sizing:border-box">{{ outline.sections[key] }}</textarea>
           <div style="display:flex;gap:8px;margin-top:8px">
             <button type="submit" class="btn btn-primary btn-sm">Save</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="toggleEdit('{{ key }}')">Cancel</button>
