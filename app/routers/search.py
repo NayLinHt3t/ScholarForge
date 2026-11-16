@@ -35,6 +35,7 @@ async def search_page(
     low_confidence = False
     source_errors: list[str] = []
     ollama_down = False
+    ranked = True
 
     if q.strip():
         try:
@@ -42,6 +43,7 @@ async def search_page(
             results = resp.results
             low_confidence = resp.low_confidence
             source_errors = resp.source_errors
+            ranked = resp.ranked
         except OllamaUnavailableError:
             ollama_down = True
 
@@ -56,6 +58,7 @@ async def search_page(
             "low_confidence": low_confidence,
             "source_errors": source_errors,
             "ollama_down": ollama_down,
+            "ranked": ranked,
             "flash_saved": bool(saved),
             "flash_duplicate": bool(duplicate),
             "current_url": f"/projects/{project_id}/search?q={quote(q)}",

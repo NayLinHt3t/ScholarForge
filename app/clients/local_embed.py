@@ -27,7 +27,8 @@ def _get_model():
                 except ImportError as e:  # not installed (e.g. local dev without requirements-cloud.txt)
                     raise AIUnavailableError("fastembed is not installed") from e
                 try:
-                    _model = TextEmbedding(model_name=config.LOCAL_EMBED_MODEL, cache_dir=config.LOCAL_EMBED_CACHE)
+                    _model = TextEmbedding(model_name=config.LOCAL_EMBED_MODEL, cache_dir=config.LOCAL_EMBED_CACHE,
+                                           threads=config.LOCAL_EMBED_THREADS)
                 except Exception as e:  # noqa: BLE001 — model missing / cannot download
                     log.warning("local_embed.load_failed error=%s", e)
                     raise AIUnavailableError("Local embedding model could not be loaded") from e
@@ -36,7 +37,7 @@ def _get_model():
 
 def _embed_sync(texts: list[str]) -> list[list[float]]:
     model = _get_model()
-    return [[float(x) for x in vec] for vec in model.embed(texts)]
+    return [[float(x) for x in vec] for vec in model.embed(texts, batch_size=16)]
 
 
 async def is_alive() -> bool:

@@ -144,7 +144,7 @@ def _wait_for(mock, timeout=2.0):
 def test_middleware_writes_one_entry_per_request(client, mock_db):
     writer = MagicMock()
     with (
-        patch("app.monitoring._write", writer),
+        patch("app.monitoring._enqueue", writer),
         patch("app.routers.projects.project_service.list_projects", return_value=[]),
     ):
         resp = client.get("/projects", headers={"x-forwarded-for": "203.0.113.7, 10.0.0.1"})
@@ -160,7 +160,7 @@ def test_middleware_writes_one_entry_per_request(client, mock_db):
 
 def test_static_files_are_not_logged(client):
     writer = MagicMock()
-    with patch("app.monitoring._write", writer):
+    with patch("app.monitoring._enqueue", writer):
         client.get("/static/css/app.css")
         time.sleep(0.05)
     writer.assert_not_called()
@@ -168,7 +168,7 @@ def test_static_files_are_not_logged(client):
 
 def test_logging_can_be_disabled(client):
     writer = MagicMock()
-    with patch.object(config, "ACCESS_LOG_ENABLED", False), patch("app.monitoring._write", writer), \
+    with patch.object(config, "ACCESS_LOG_ENABLED", False), patch("app.monitoring._enqueue", writer), \
          patch("app.routers.projects.project_service.list_projects", return_value=[]):
         client.get("/projects")
         time.sleep(0.05)

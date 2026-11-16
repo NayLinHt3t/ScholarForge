@@ -85,10 +85,10 @@ async def test_facade_uses_groq_and_local_embeddings(groq_on):
 
 async def test_local_embed_with_fake_fastembed(monkeypatch):
     class FakeModel:
-        def __init__(self, model_name, cache_dir=None):
+        def __init__(self, model_name, cache_dir=None, threads=None):
             self.name = model_name
 
-        def embed(self, texts):
+        def embed(self, texts, batch_size=None):
             for t in texts:
                 yield [float(len(t)), 1.0]
 

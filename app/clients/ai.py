@@ -43,7 +43,7 @@ def provider() -> str:
 def embed_provider() -> str:
     """Embedding provider: ollama | huggingface | local."""
     p = config.EMBED_PROVIDER
-    return p if p in ("huggingface", "local") else "ollama"
+    return p if p in ("huggingface", "local", "none") else "ollama"
 
 
 def runs_locally() -> bool:
@@ -81,6 +81,8 @@ async def embed_many(texts: list[str]) -> list[list[float]]:
     t = time.perf_counter()
     try:
         ep = embed_provider()
+        if ep == "none":
+            raise AIUnavailableError("embeddings turned off (EMBED_PROVIDER=none)")
         if ep == "local":
             out = await local_embed.embed_many(texts)
         elif ep == "huggingface":

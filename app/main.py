@@ -30,10 +30,10 @@ from app.routers import summary as summary_router
 from app.routers import themes as themes_router
 from app.routers import views as views_router
 from app.routers import admin as admin_router
-from app.monitoring import access_log_middleware
+from app.monitoring import access_log_middleware, lifespan
 from app.routers import workspace_outline as workspace_outline_router
 
-app = FastAPI(title="ScholarForge")
+app = FastAPI(title="ScholarForge", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Access log for every request (Computer Crime Act §26) — also feeds the /admin usage dashboard
 app.middleware("http")(access_log_middleware)

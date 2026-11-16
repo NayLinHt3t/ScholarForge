@@ -1,19 +1,22 @@
 """Access log (Computer Crime Act §26) + usage data for the admin dashboard.
 
-Every request (except static files) writes one append-only entry to the
-Firestore collection `access_log`:
+Every request (except static files) produces one entry; entries are written to
+the Firestore collection `access_log` in append-only batch documents
+({first_ts, last_ts, expire_at, count, entries: [...]}). Each entry has:
 
     ts, expire_at, user_id, ip, forwarded_for, method, path, route,
     feature, status, duration_ms, ai_calls, ai_ms, ai_errors
 
-`expire_at` drives a Firestore TTL policy (see the deploy guide) so entries are
-deleted automatically after ACCESS_LOG_RETENTION_DAYS (91 days ≥ the 90-day minimum).
-Writes happen in a background thread and never slow down or break a request.
+Batches are deleted by purge_expired() once their newest entry is older than
+ACCESS_LOG_RETENTION_DAYS (91 days ≥ the 90-day minimum). Writing never slows
+down or breaks a request.
 """
 import asyncio
 import logging
 import re
+import threading
 import time
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Request
@@ -98,11 +101,114 @@ def build_entry(request: Request, status: int, duration_ms: int, usage: dict, no
     }
 
 
-def _write(db, entry: dict) -> None:
+# ── Batched writing ─────────────────────────────────────────────────────────
+# One Firestore document per batch of requests (not one per request), so the
+# free Spark quota (20,000 writes / 50,000 reads per day) is enough. Each batch
+# document is written once and never changed (append-only).
+
+FLUSH_SIZE = 100               # write when this many entries are waiting …
+FLUSH_INTERVAL_S = 600         # … or every 10 minutes
+PURGE_EVERY_S = 6 * 3600       # delete expired logs/sessions every 6 hours
+PURGE_LIMIT = 300              # max documents deleted per collection per run
+
+_buffer: list[dict] = []
+_buffer_lock = threading.Lock()
+_db_ref = None
+
+
+def _enqueue(db, entry: dict) -> None:
+    global _db_ref
+    with _buffer_lock:
+        _buffer.append(entry)
+        _db_ref = db
+        full = len(_buffer) >= FLUSH_SIZE
+    if full:
+        try:
+            asyncio.get_running_loop().run_in_executor(None, flush)
+        except RuntimeError:          # no running loop (e.g. called from a thread)
+            flush()
+
+
+def flush(db=None) -> int:
+    """Write all waiting entries as one batch document. Returns how many were written."""
+    with _buffer_lock:
+        batch = list(_buffer)
+        _buffer.clear()
+        db = db or _db_ref
+    if not batch or db is None:
+        return 0
+    stamps = [e["ts"] for e in batch]
+    doc = {
+        "first_ts": min(stamps),
+        "last_ts": max(stamps),
+        "expire_at": max(stamps) + timedelta(days=config.ACCESS_LOG_RETENTION_DAYS),
+        "count": len(batch),
+        "entries": batch,
+    }
     try:
-        db.collection(ACCESS_LOG).document().set(entry)
+        db.collection(ACCESS_LOG).document().set(doc)
+        return len(batch)
     except Exception as e:  # noqa: BLE001 — logging must never break the app
-        log.warning("access_log.write_failed error=%s", type(e).__name__)
+        log.warning("access_log.write_failed error=%s entries=%d", type(e).__name__, len(batch))
+        with _buffer_lock:            # keep them for the next try (bounded)
+            if len(_buffer) < 5 * FLUSH_SIZE:
+                _buffer[:0] = batch
+        return 0
+
+
+def purge_expired(db, now: datetime | None = None) -> int:
+    """Delete access-log batches and admin sessions whose expire_at has passed.
+    Replaces Firestore TTL, which needs billing enabled."""
+    from app.collections import ADMIN_SESSIONS
+    from google.cloud import firestore as fs
+    now = now or datetime.now(timezone.utc)
+    deleted = 0
+    for name in (ACCESS_LOG, ADMIN_SESSIONS):
+        try:
+            docs = (db.collection(name)
+                    .where(filter=fs.FieldFilter("expire_at", "<", now))
+                    .limit(PURGE_LIMIT).get())
+            for d in docs:
+                d.reference.delete()
+                deleted += 1
+        except Exception as e:  # noqa: BLE001
+            log.warning("purge.failed collection=%s error=%s", name, type(e).__name__)
+    if deleted:
+        log.info("purge.ok deleted=%d", deleted)
+    return deleted
+
+
+def _db_for_app(app):
+    from app.database import get_db
+    return app.dependency_overrides.get(get_db, get_db)()
+
+
+async def _background(app) -> None:
+    last_purge = 0.0
+    while True:
+        await asyncio.sleep(FLUSH_INTERVAL_S)
+        await asyncio.to_thread(flush)
+        if time.monotonic() - last_purge >= PURGE_EVERY_S:
+            last_purge = time.monotonic()
+            try:
+                await asyncio.to_thread(purge_expired, _db_for_app(app))
+            except Exception as e:  # noqa: BLE001
+                log.warning("purge.skipped error=%s", type(e).__name__)
+
+
+@asynccontextmanager
+async def lifespan(app):
+    task = asyncio.create_task(_background(app)) if config.ACCESS_LOG_ENABLED else None
+    try:
+        yield
+    finally:
+        if task:
+            task.cancel()
+        # Don't lose waiting entries when the server stops — but never hang shutdown on it.
+        try:
+            await asyncio.wait_for(asyncio.to_thread(flush), timeout=10)
+        except (asyncio.TimeoutError, Exception) as e:  # noqa: BLE001
+            log.warning("access_log.final_flush_failed error=%s", type(e).__name__)
 
 
 def _db_for(request: Request):
@@ -128,7 +234,6 @@ async def access_log_middleware(request: Request, call_next):
                 request, status, int((time.perf_counter() - started) * 1000), usage,
                 datetime.now(timezone.utc),
             )
-            db = _db_for(request)
-            asyncio.get_running_loop().run_in_executor(None, _write, db, entry)
+            _enqueue(_db_for(request), entry)
         except Exception as e:  # noqa: BLE001
             log.warning("access_log.build_failed error=%s", type(e).__name__)

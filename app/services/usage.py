@@ -131,17 +131,29 @@ def summarize(entries: list[dict], days: int, now: datetime, tz: str, truncated:
     return u
 
 
+MAX_BATCHES = 3000     # each batch document holds up to ~100 entries
+
+
 def load(db: firestore.Client, days: int, now: datetime | None = None) -> tuple[list[dict], bool]:
+    """Read access-log batch documents for the period and return the individual entries."""
     now = now or datetime.now(timezone.utc)
     since = now - timedelta(days=days + 1)   # +1 day so the first local day is complete
     docs = (
         db.collection(ACCESS_LOG)
-        .where(filter=firestore.FieldFilter("ts", ">=", since))
-        .limit(MAX_ENTRIES)
+        .where(filter=firestore.FieldFilter("last_ts", ">=", since))
+        .limit(MAX_BATCHES)
         .get()
     )
-    entries = [d.to_dict() for d in docs]
-    return entries, len(entries) >= MAX_ENTRIES
+    entries: list[dict] = []
+    n_docs = 0
+    for d in docs:
+        n_docs += 1
+        for e in (d.to_dict() or {}).get("entries", []):
+            ts = e.get("ts")
+            if isinstance(ts, datetime) and ts >= since:
+                entries.append(e)
+    truncated = n_docs >= MAX_BATCHES or len(entries) >= MAX_ENTRIES
+    return entries[:MAX_ENTRIES], truncated
 
 
 def count_collection(db: firestore.Client, name: str) -> int | None:

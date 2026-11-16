@@ -18,6 +18,7 @@ GROQ_MODEL: str = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 
 LOCAL_EMBED_MODEL: str = os.environ.get("LOCAL_EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 LOCAL_EMBED_CACHE: str | None = os.environ.get("LOCAL_EMBED_CACHE") or None
+LOCAL_EMBED_THREADS: int = int(os.environ.get("LOCAL_EMBED_THREADS", "1"))   # 1 = least memory
 
 OLLAMA_BASE_URL: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL: str = "nomic-embed-text"
