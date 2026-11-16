@@ -39,7 +39,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.middleware("http")(access_log_middleware)
 app.include_router(auth_router.router)
 app.include_router(projects_router.router)
-app.include_router(admin_router.router)   # /admin usage dashboard (ADMIN_EMAILS only)
+app.include_router(admin_router.router)   # /admin portal: own login, usage dashboard
 app.include_router(views_router.router)   # Home-level screens: My Library, My Notes, Settings
 # workspace MVP routes (order matters: more specific paths first)
 app.include_router(sources_router.router)

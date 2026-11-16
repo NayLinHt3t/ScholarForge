@@ -17,10 +17,11 @@ HF_EMBED_MODEL: str = os.environ.get("HF_EMBED_MODEL", "sentence-transformers/al
 SEMANTIC_SCHOLAR_API_KEY: str = os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "")
 
 # ── Hosting / monitoring ─────────────────────────────────────────────────────
-# Comma-separated emails that may open the /admin monitoring dashboard.
-ADMIN_EMAILS: frozenset[str] = frozenset(
-    e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
-)
+# Admin portal (/admin) — separate from student accounts.
+# ADMIN_PASSWORD_HASH is a bcrypt hash made with:  python -m app.tools.admin_password
+ADMIN_USERNAME: str = os.environ.get("ADMIN_USERNAME", "").strip()
+ADMIN_PASSWORD_HASH: str = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
+ADMIN_SESSION_HOURS: int = int(os.environ.get("ADMIN_SESSION_HOURS", "8"))
 # Set to "true" when served over HTTPS (e.g. Cloud Run) so the session cookie is Secure.
 COOKIE_SECURE: bool = os.environ.get("COOKIE_SECURE", "false").lower() == "true"
 # Access log (Computer Crime Act §26): keep at least 90 days.

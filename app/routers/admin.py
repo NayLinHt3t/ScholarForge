@@ -1,23 +1,97 @@
-"""Admin-only usage dashboard (/admin). Only emails listed in ADMIN_EMAILS can open it."""
+"""Admin portal (/admin): its own login, its own session, its own layout.
+
+Student accounts can never open these pages — admin access uses separate
+credentials (ADMIN_USERNAME / ADMIN_PASSWORD_HASH) and a separate cookie.
+"""
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from google.cloud import firestore
 
 from app import config
 from app.clients import ai
 from app.collections import PROJECTS, USERS
 from app.database import get_db
-from app.dependencies import require_auth
-from app.models import User
+from app.monitoring import client_ip
+from app.services import admin_auth
 from app.services import usage as usage_service
-from app.templating import is_admin, templates
+from app.templating import templates
 
-router = APIRouter(tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"])
 
 PERIODS = (7, 30, 90)
 _CHART_W, _CHART_H = 720, 150
 
+
+# ── auth ────────────────────────────────────────────────────────────────────
+
+def require_admin(request: Request, db: firestore.Client = Depends(get_db)) -> dict:
+    session = admin_auth.get_session(db, request.cookies.get(admin_auth.ADMIN_COOKIE))
+    if not session:
+        raise HTTPException(status_code=303, headers={"Location": "/admin/login"})
+    request.state.user_id = f"admin:{session['username']}"   # for the access log
+    return session
+
+
+def _login_page(request: Request, error: str | None = None, status_code: int = 200, username: str = ""):
+    return templates.TemplateResponse("admin/login.html", {
+        "request": request, "error": error, "username": username,
+        "configured": admin_auth.is_configured(),
+    }, status_code=status_code)
+
+
+@router.get("/login")
+async def login_page(request: Request, db: firestore.Client = Depends(get_db)):
+    if admin_auth.is_configured() and admin_auth.get_session(db, request.cookies.get(admin_auth.ADMIN_COOKIE)):
+        return RedirectResponse(url="/admin", status_code=303)
+    return _login_page(request)
+
+
+@router.post("/login")
+async def login(
+    request: Request,
+    username: str = Form(default=""),
+    password: str = Form(default=""),
+    db: firestore.Client = Depends(get_db),
+):
+    ip, _ = client_ip(request)
+    if not admin_auth.is_configured():
+        return _login_page(request, status_code=503)
+    if admin_auth.is_locked(ip):
+        admin_auth.audit(db, "admin_login_blocked", None, ip)
+        return _login_page(request, "Too many failed attempts. Please wait 15 minutes and try again.",
+                           status_code=429, username=username)
+    if not admin_auth.verify_credentials(username, password):
+        admin_auth.record_failure(ip)
+        admin_auth.audit(db, "admin_login_failed", None, ip)
+        return _login_page(request, "Wrong username or password.", status_code=401, username=username)
+
+    admin_auth.clear_failures(ip)
+    token = admin_auth.create_session(db, config.ADMIN_USERNAME, ip)
+    admin_auth.audit(db, "admin_login", config.ADMIN_USERNAME, ip)
+    response = RedirectResponse(url="/admin", status_code=303)
+    response.set_cookie(
+        key=admin_auth.ADMIN_COOKIE, value=token, path="/admin",
+        httponly=True, samesite="strict", secure=config.COOKIE_SECURE,
+        max_age=config.ADMIN_SESSION_HOURS * 3600,
+    )
+    return response
+
+
+@router.post("/logout")
+async def logout(request: Request, db: firestore.Client = Depends(get_db)):
+    token = request.cookies.get(admin_auth.ADMIN_COOKIE)
+    session = admin_auth.get_session(db, token)
+    admin_auth.delete_session(db, token)
+    if session:
+        admin_auth.audit(db, "admin_logout", session.get("username"), client_ip(request)[0])
+    response = RedirectResponse(url="/admin/login", status_code=303)
+    response.delete_cookie(admin_auth.ADMIN_COOKIE, path="/admin")
+    return response
+
+
+# ── dashboard ───────────────────────────────────────────────────────────────
 
 def bar_geometry(values: list[int], width: int = _CHART_W, height: int = _CHART_H, gap: int = 2) -> list[dict]:
     """x/y/w/h for a simple bar chart; bars anchor to the baseline, 2px gaps between them."""
@@ -40,16 +114,13 @@ def _bar_path(b: dict, r: float = 4) -> str:
             f"Q{x + w},{y} {x + w},{y + r} L{x + w},{y + h} Z")
 
 
-@router.get("/admin")
+@router.get("")
 async def admin_dashboard(
     request: Request,
     days: int = 7,
-    user: User = Depends(require_auth),
+    admin: dict = Depends(require_admin),
     db: firestore.Client = Depends(get_db),
 ):
-    if not is_admin(user):
-        # Hide that the page exists from non-admins.
-        raise HTTPException(status_code=404)
     days = days if days in PERIODS else 7
     now = datetime.now(timezone.utc)
     entries, truncated = usage_service.load(db, days, now=now)
@@ -64,12 +135,10 @@ async def admin_dashboard(
         b["path"] = _bar_path(b)
         b["tip"] = f"{h:02d}:00–{h:02d}:59: {u.hourly[h]} actions"
 
-    # Show at most ~8 date labels on the x axis.
-    label_every = max(1, len(u.daily) // 8)
-
-    return templates.TemplateResponse("admin.html", {
-        "request": request, "user": user, "u": u, "days": days, "periods": PERIODS,
-        "daily_bars": daily_bars, "hourly_bars": hourly_bars, "label_every": label_every,
+    return templates.TemplateResponse("admin/dashboard.html", {
+        "request": request, "admin": admin, "u": u, "days": days, "periods": PERIODS,
+        "daily_bars": daily_bars, "hourly_bars": hourly_bars,
+        "label_every": max(1, len(u.daily) // 8),
         "chart_w": _CHART_W, "chart_h": _CHART_H,
         "max_daily": max([d.users for d in u.daily] or [0]),
         "max_hourly": max(u.hourly or [0]),

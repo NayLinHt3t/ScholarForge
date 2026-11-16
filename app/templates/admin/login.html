@@ -1,0 +1,34 @@
+{% extends "admin/base.html" %}
+{% block title %}Admin sign in — ScholarForge{% endblock %}
+{% block admin_body %}
+<div class="auth-page" style="min-height:calc(100vh - 56px)">
+  <div class="auth-box">
+    <div class="auth-card">
+      <div class="auth-card-title">Admin sign in</div>
+      <div class="auth-card-subtitle">For the people who run ScholarForge. Student accounts can't sign in here.</div>
+
+      {% if not configured %}
+      <div class="alert alert-warning">
+        <div>The admin portal isn't set up yet. Set <code>ADMIN_USERNAME</code> and <code>ADMIN_PASSWORD_HASH</code>, then restart the app.
+        Create the hash with <code>python -m app.tools.admin_password</code>.</div>
+      </div>
+      {% else %}
+        {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+        <form method="post" action="/admin/login" autocomplete="on">
+          <div class="field">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" required autofocus autocomplete="username" value="{{ username }}">
+          </div>
+          <div class="field" style="margin-bottom:20px">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" required autocomplete="current-password">
+          </div>
+          <button class="auth-submit" type="submit">Sign in</button>
+        </form>
+      {% endif %}
+
+      <div class="auth-footer"><a href="/auth/login">Go to the student app</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

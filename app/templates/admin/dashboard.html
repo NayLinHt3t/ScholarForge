@@ -1,8 +1,7 @@
-{% extends "base.html" %}
+{% extends "admin/base.html" %}
 {% block title %}Usage — ScholarForge{% endblock %}
-{% block active_nav %}settings{% endblock %}
 
-{% block styles %}
+{% block admin_styles %}
 .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
 .seg a { padding: 7px 14px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); border-left: 1px solid var(--border); }
 .seg a:first-child { border-left: none; }
@@ -30,12 +29,11 @@ table.data .num { text-align: right; width: 90px; }
 .kv dd { font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
 {% endblock %}
 
-{% block body %}
+{% block admin_body %}
 <div class="page" style="max-width:1000px">
-  <nav class="crumbs" aria-label="Breadcrumb"><a href="/settings">Settings</a><span class="sep">/</span><span>Usage</span></nav>
   <div class="page-header">
     <div>
-      <h1>Usage</h1>
+      <h1>Usage dashboard</h1>
       <p>How people use ScholarForge. Times are in {{ tz.replace("_", " ") }} time. Only totals are shown — no individual's activity.</p>
     </div>
     <nav class="seg" aria-label="Period">

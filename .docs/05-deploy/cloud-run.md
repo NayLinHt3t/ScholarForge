@@ -88,25 +88,42 @@ gcloud secrets add-iam-policy-binding hf-token \
 
 On Cloud Run the app logs in to Firestore as this service account. You do **not** upload `serviceAccountKey.json` (it is excluded from the image).
 
-## 6. Make access-log entries delete themselves after 91 days (one time)
+## 6. Create the admin login (one time)
+
+The admin portal (`/admin`) has its own username and password, separate from student accounts. Only a bcrypt **hash** of the password is stored — never the password itself.
+
+```bash
+python -m app.tools.admin_password          # type your admin password twice (min 12 characters)
+```
+
+It prints a hash. Store it as a secret (paste the hash in place of `HASH`):
+
+```bash
+printf '%s' 'HASH' | gcloud secrets create admin-password-hash --data-file=-
+gcloud secrets add-iam-policy-binding admin-password-hash \
+  --member="serviceAccount:$SA" --role="roles/secretmanager.secretAccessor"
+```
+
+## 6b. Make access-log entries and admin sessions delete themselves (one time)
 
 Each log entry has an `expire_at` date. This tells Firestore to delete entries once that date passes, so the log is kept for the 90 days the Computer Crime Act §26 requires, and no longer.
 
 ```bash
 gcloud firestore fields ttls update expire_at --collection-group=access_log --enable-ttl
+gcloud firestore fields ttls update expire_at --collection-group=admin_sessions --enable-ttl
 ```
 
 ## 7. Deploy
 
-Replace `you@example.com` with the email you will sign up with. That account can open the usage dashboard.
+Choose your admin username in place of `admin` if you like.
 
 ```bash
 gcloud run deploy scholarforge \
   --source . \
   --service-account scholarforge-run@scholarforge-84902.iam.gserviceaccount.com \
   --allow-unauthenticated \
-  --set-env-vars GOOGLE_CLOUD_PROJECT=scholarforge-84902,AI_PROVIDER=huggingface,ADMIN_EMAILS=you@example.com,DASHBOARD_TZ=Asia/Bangkok \
-  --set-secrets HF_TOKEN=hf-token:latest \
+  --set-env-vars GOOGLE_CLOUD_PROJECT=scholarforge-84902,AI_PROVIDER=huggingface,ADMIN_USERNAME=admin,DASHBOARD_TZ=Asia/Bangkok \
+  --set-secrets HF_TOKEN=hf-token:latest,ADMIN_PASSWORD_HASH=admin-password-hash:latest \
   --memory 512Mi --min-instances 0 --max-instances 3
 ```
 
@@ -114,10 +131,9 @@ The first deploy takes a few minutes (Cloud Build builds the Dockerfile). At the
 
 ## 8. Check it works
 
-1. Open the URL → **Sign up** with the admin email.
-2. **Settings** → *AI assistant* should say **Ready**. You should also see **Usage dashboard** under *Administrator*.
-3. Create a project, search for papers, open one and ask a question.
-4. Open **Settings → Usage dashboard**. Your activity appears straight away.
+1. Open the URL → **Sign up** as a normal student and check **Settings** → *AI assistant* says **Ready**.
+2. Create a project, search for papers, open one and ask a question.
+3. Open `https://…run.app/admin` → sign in with the **admin** username and password → the usage dashboard shows the activity from step 2.
 
 ## Updating, logs, switching off
 
@@ -125,7 +141,7 @@ The first deploy takes a few minutes (Cloud Build builds the Dockerfile). At the
 |---|---|
 | Deploy a new version | run the step 7 command again |
 | Read server logs | `gcloud run services logs read scholarforge --limit 100` |
-| Add another admin | `gcloud run services update scholarforge --update-env-vars ADMIN_EMAILS=a@x.com,b@y.com` |
+| Change the admin password | make a new hash (step 6), then `printf '%s' 'HASH' \| gcloud secrets versions add admin-password-hash --data-file=-` and run the deploy command again |
 | Use a different AI model | `gcloud run services update scholarforge --update-env-vars HF_CHAT_MODEL=org/model` |
 | Take the site offline | `gcloud run services delete scholarforge` |
 
@@ -141,7 +157,8 @@ The first deploy takes a few minutes (Cloud Build builds the Dockerfile). At the
 |---|---|
 | "The AI service isn't responding right now" | HF token missing or wrong, no credits left, or the model is unavailable. Check the server logs for `hf.chat.error status=...` |
 | Pages fail with 403 / PermissionDenied in logs | step 5 role missing for the service account |
-| Can't open `/admin` (404) | your email is not exactly in `ADMIN_EMAILS` |
+| `/admin/login` says "isn't set up yet" | `ADMIN_USERNAME` or the `admin-password-hash` secret is missing from the deploy command |
+| "Too many failed attempts" | 5 wrong passwords from your network — wait 15 minutes |
 | Signed out after every click | `COOKIE_SECURE=true` but the site was opened over plain http — always use the https URL |
 
 ## Privacy notes (PDPA)

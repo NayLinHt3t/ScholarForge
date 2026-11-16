@@ -80,6 +80,8 @@ def summarize(entries: list[dict], days: int, now: datetime, tz: str, truncated:
         if d < first_day or d > today:
             continue
         user = e.get("user_id") or UNAUTHENTICATED
+        if str(user).startswith("admin:"):
+            continue   # admin portal visits are not student usage
         authed = user != UNAUTHENTICATED
         feature = e.get("feature")
         status = int(e.get("status") or 0)
