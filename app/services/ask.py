@@ -8,7 +8,7 @@ If it does not, no quote is shown (the app never displays an unverified quote).
 import re
 from dataclasses import dataclass
 
-from app.clients import ollama
+from app.clients import ai
 from app.models import SavedResource
 
 NOT_COVERED = "The saved abstract doesn't cover this. Open the full text to check."
@@ -51,5 +51,5 @@ def parse_answer(raw: str, abstract: str) -> Answer:
 
 
 async def ask(paper: SavedResource, question: str) -> Answer:
-    raw = await ollama.generate(build_prompt(paper, question))
+    raw = await ai.generate(build_prompt(paper, question))
     return parse_answer(raw, paper.abstract or "")

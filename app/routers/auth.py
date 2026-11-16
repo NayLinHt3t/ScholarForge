@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
+from app import config
 from app.database import get_db
 from app.dependencies import COOKIE_NAME, get_current_user
 from app.models import User
 from app.services import auth as auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-templates = Jinja2Templates(directory="app/templates")
 
 _COOKIE_MAX_AGE = 30 * 24 * 60 * 60  # 30 days in seconds
 
@@ -20,6 +20,7 @@ def _set_session_cookie(response: RedirectResponse, token: str) -> None:
         value=token,
         httponly=True,
         samesite="lax",
+        secure=config.COOKIE_SECURE,   # True when served over HTTPS (hosted)
         max_age=_COOKIE_MAX_AGE,
     )
 

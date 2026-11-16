@@ -1,0 +1,11 @@
+# Files NOT uploaded to Cloud Build by `gcloud run deploy --source .`
+#!include:.gitignore
+.git
+.claude
+.docs
+plan
+tests
+dataconnect
+.pytest_cache
+serviceAccountKey.json
+.env

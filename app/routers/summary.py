@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
 from app.database import get_db
@@ -12,7 +12,6 @@ from app.services import projects as project_service
 from app.services import summary as summary_service
 
 router = APIRouter(tags=["summary"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/projects/{project_id}/summarize")

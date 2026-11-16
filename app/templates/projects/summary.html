@@ -44,7 +44,7 @@
 <div class="page-body">
   {% if ollama_down %}
   <div class="alert alert-error">
-    <strong>Ollama is not running.</strong>&nbsp;Start it with <code>ollama serve</code> and try again.
+    {% if ai_runs_locally() %}<strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and try again.{% else %}<strong>The AI service isn't responding right now.</strong> Please try again in a minute.{% endif %}
   </div>
   {% endif %}
 

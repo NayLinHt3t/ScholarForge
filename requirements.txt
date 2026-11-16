@@ -1,4 +1,6 @@
-fastapi>=0.115.0
+# fastapi is pinned below 0.116: newer versions pull Starlette 1.x, which changed
+# TemplateResponse() and breaks every page in this app.
+fastapi>=0.115.0,<0.116
 uvicorn[standard]>=0.32.0
 google-cloud-firestore>=2.19.0
 bcrypt>=4.2.0

@@ -4,7 +4,7 @@ import math
 import time
 from dataclasses import dataclass, field
 
-from app.clients import ollama, openalex, semantic_scholar
+from app.clients import ai, openalex, semantic_scholar
 from app.config import SEARCH_LOW_CONFIDENCE_THRESHOLD, SEARCH_MAX_PER_SOURCE, SEARCH_TOP_K
 from app.exceptions import OllamaUnavailableError
 from app.models.search import SearchResult
@@ -105,7 +105,7 @@ class SearchResponse:
 async def run(idea: str) -> SearchResponse:
     t0 = time.perf_counter()
 
-    if not await ollama.is_alive():
+    if not await ai.is_alive():
         raise OllamaUnavailableError()
 
     t_api = time.perf_counter()
@@ -142,7 +142,7 @@ async def run(idea: str) -> SearchResponse:
 
     t_embed = time.perf_counter()
     texts = [idea] + [f"{c.title}. {c.abstract or ''}" for c in candidates]
-    embeddings = await asyncio.gather(*[ollama.embed(t) for t in texts])
+    embeddings = await ai.embed_many(texts)
     embed_ms = int((time.perf_counter() - t_embed) * 1000)
 
     t_rank = time.perf_counter()

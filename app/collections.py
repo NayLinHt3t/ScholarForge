@@ -11,6 +11,7 @@ SESSIONS = "sessions"
 PROJECTS = "projects"
 CONSENT_RECORDS = "consent_records"
 AUDIT_LOG = "audit_log"
+ACCESS_LOG = "access_log"            # every request, 91-day TTL (see app/monitoring.py)
 
 # Project subcollections
 SAVED_RESOURCES = "saved_resources"   # sources (kept name for backward compat)

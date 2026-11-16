@@ -1,0 +1,21 @@
+# Never ship secrets or local data into the image
+.env
+.env.*
+!.env.example
+serviceAccountKey.json
+*.json
+!app/**/*.json
+
+.git
+.gitignore
+.claude
+.docs
+plan
+tests
+dataconnect
+.pytest_cache
+**/__pycache__
+**/*.pyc
+.venv
+venv
+*.md

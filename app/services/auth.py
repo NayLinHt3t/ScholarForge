@@ -8,7 +8,7 @@ from app.collections import AUDIT_LOG, CONSENT_RECORDS, PROJECTS, SESSIONS, USER
 from app.models import AuditLogEntry, ConsentRecord, Session, User
 
 SESSION_EXPIRY_DAYS = 30
-TERMS_VERSION = "v1.0"
+TERMS_VERSION = "v1.1"
 
 
 def _hash_password(password: str) -> str:

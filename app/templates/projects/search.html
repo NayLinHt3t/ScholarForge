@@ -112,7 +112,7 @@ a.paper-title:hover { color: var(--accent); }
 
   {% if ollama_down %}
   <div class="alert alert-error">
-    <div><strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and search again.</div>
+    <div>{% if ai_runs_locally() %}<strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and try again.{% else %}<strong>The AI service isn't responding right now.</strong> Please try again in a minute.{% endif %}</div>
   </div>
   {% endif %}
 

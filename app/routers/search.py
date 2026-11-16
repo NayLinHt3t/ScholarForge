@@ -2,10 +2,10 @@ from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
-from app.clients import ollama, semantic_scholar as ss_client
+from app.clients import ai, semantic_scholar as ss_client
 from app.database import get_db
 from app.dependencies import require_auth
 from app.exceptions import DuplicateResourceError, OllamaUnavailableError
@@ -15,7 +15,6 @@ from app.services import projects as project_service
 from app.services import search as search_service
 
 router = APIRouter(tags=["search"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/projects/{project_id}/search")
@@ -96,7 +95,7 @@ async def add_by_url(
 
     embedding = None
     try:
-        embedding = await ollama.embed(f"{title}. {abstract or ''}")
+        embedding = await ai.embed(f"{title}. {abstract or ''}")
     except OllamaUnavailableError:
         pass
 

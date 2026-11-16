@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Usage — ScholarForge{% endblock %}
+{% block active_nav %}settings{% endblock %}
+
+{% block styles %}
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.seg a { padding: 7px 14px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); border-left: 1px solid var(--border); }
+.seg a:first-child { border-left: none; }
+.seg a[aria-current="true"] { background: var(--accent-soft); color: var(--accent-strong); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s3); }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--s4); }
+.tile-label { font-size: var(--fs-sm); color: var(--text-muted); }
+.tile-value { font-size: 1.75rem; font-weight: 650; letter-spacing: -.02em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile-sub { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2px; }
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .bar { fill: var(--accent); }
+.chart .bar:hover, .chart .bar:focus { fill: var(--accent-strong); outline: none; }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart text { font-size: 11px; fill: var(--text-faint); font-family: var(--font-ui); }
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--text); color: #fff; font-size: var(--fs-xs); padding: 6px 9px; border-radius: 6px; white-space: nowrap; box-shadow: var(--shadow-pop); }
+table.data { width: 100%; border-collapse: collapse; font-size: var(--fs-md); }
+table.data th { text-align: left; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; padding: 10px var(--s4); border-bottom: 1px solid var(--border); }
+table.data td { padding: 10px var(--s4); border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+table.data tr:first-child td { border-top: none; }
+table.data .num { text-align: right; width: 90px; }
+.inline-bar { height: 8px; border-radius: 0 4px 4px 0; background: var(--accent); min-width: 2px; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s4); }
+.kv dt { font-size: var(--fs-sm); color: var(--text-muted); }
+.kv dd { font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+{% endblock %}
+
+{% block body %}
+<div class="page" style="max-width:1000px">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/settings">Settings</a><span class="sep">/</span><span>Usage</span></nav>
+  <div class="page-header">
+    <div>
+      <h1>Usage</h1>
+      <p>How people use ScholarForge. Times are in {{ tz.replace("_", " ") }} time. Only totals are shown — no individual's activity.</p>
+    </div>
+    <nav class="seg" aria-label="Period">
+      {% for p in periods %}<a href="?days={{ p }}" aria-current="{{ 'true' if p == days else 'false' }}">{{ p }} days</a>{% endfor %}
+    </nav>
+  </div>
+
+  {% if u.truncated %}
+  <div class="notice notice-warning">There is more activity than the dashboard loads at once, so these numbers are a lower bound. Pick a shorter period for exact numbers.</div>
+  {% endif %}
+
+  {# ── Headline numbers ── #}
+  <div class="tiles">
+    <div class="tile">
+      <div class="tile-label">Active users</div>
+      <div class="tile-value">{{ u.active_users }}</div>
+      <div class="tile-sub">signed in during the last {{ days }} days{% if total_users is not none %} · {{ total_users }} accounts in total{% endif %}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Active today</div>
+      <div class="tile-value">{{ u.active_today }}</div>
+      <div class="tile-sub">{{ u.signups }} new sign-up{{ "s" if u.signups != 1 }} in this period</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">Actions</div>
+      <div class="tile-value">{{ "{:,}".format(u.actions) }}</div>
+      <div class="tile-sub">searches, papers read, questions, notes…{% if total_projects is not none %} · {{ total_projects }} projects{% endif %}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">AI requests</div>
+      <div class="tile-value">{{ "{:,}".format(u.ai_calls) }}</div>
+      <div class="tile-sub">{% if u.ai_median_ms is not none %}typical answer in {{ "%.1f" | format(u.ai_median_ms / 1000) }} s{% else %}no AI use yet{% endif %}</div>
+    </div>
+  </div>
+
+  {# ── Daily active users ── #}
+  <section class="section">
+    <div class="section-head"><h2>Active users per day</h2><span class="small faint">highest: {{ max_daily }}</span></div>
+    <div class="panel" style="padding:20px 20px 12px">
+      {% if u.active_users %}
+      <svg class="chart" viewBox="-28 -8 {{ chart_w + 36 }} {{ chart_h + 30 }}" role="img" aria-label="Bar chart of active users per day for the last {{ days }} days">
+        <line class="grid" x1="0" x2="{{ chart_w }}" y1="{{ chart_h }}" y2="{{ chart_h }}"/>
+        <line class="grid" x1="0" x2="{{ chart_w }}" y1="0" y2="0" stroke-dasharray="3 4"/>
+        <text x="-8" y="4" text-anchor="end">{{ max_daily }}</text>
+        <text x="-8" y="{{ chart_h + 4 }}" text-anchor="end">0</text>
+        {% for b in daily_bars %}
+        {% if b.h %}<path class="bar" d="{{ b.path }}"/>{% endif %}
+        <rect class="hit" x="{{ b.x }}" y="0" width="{{ b.w }}" height="{{ chart_h }}" data-tip="{{ b.tip }}" tabindex="0" aria-label="{{ b.tip }}"/>
+        {% if loop.index0 % label_every == 0 %}<text x="{{ b.x + b.w / 2 }}" y="{{ chart_h + 18 }}" text-anchor="middle">{{ u.daily[loop.index0].day.strftime("%d %b") }}</text>{% endif %}
+        {% endfor %}
+      </svg>
+      <details style="margin-top:8px"><summary class="link-btn" style="cursor:pointer">Show as table</summary>
+        <table class="data" style="margin-top:8px"><thead><tr><th>Day</th><th class="num">Users</th><th class="num">Actions</th></tr></thead><tbody>
+          {% for d in u.daily | reverse %}<tr><td>{{ d.day.strftime("%a %d %b %Y") }}</td><td class="num">{{ d.users }}</td><td class="num">{{ d.actions }}</td></tr>{% endfor %}
+        </tbody></table>
+      </details>
+      {% else %}
+      <p class="muted small" style="padding:24px 0;text-align:center">Nobody has signed in during this period yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ── Busiest hours ── #}
+  <section class="section">
+    <div class="section-head"><h2>When people use it</h2>{% if u.busiest_hour is not none %}<span class="small faint">busiest: {{ "%02d" | format(u.busiest_hour) }}:00–{{ "%02d" | format(u.busiest_hour) }}:59</span>{% endif %}</div>
+    <div class="panel" style="padding:20px 20px 12px">
+      {% if u.actions %}
+      <svg class="chart" viewBox="-28 -8 {{ chart_w + 36 }} {{ chart_h + 30 }}" role="img" aria-label="Bar chart of actions by hour of day">
+        <line class="grid" x1="0" x2="{{ chart_w }}" y1="{{ chart_h }}" y2="{{ chart_h }}"/>
+        <line class="grid" x1="0" x2="{{ chart_w }}" y1="0" y2="0" stroke-dasharray="3 4"/>
+        <text x="-8" y="4" text-anchor="end">{{ max_hourly }}</text>
+        <text x="-8" y="{{ chart_h + 4 }}" text-anchor="end">0</text>
+        {% for b in hourly_bars %}
+        {% if b.h %}<path class="bar" d="{{ b.path }}"/>{% endif %}
+        <rect class="hit" x="{{ b.x }}" y="0" width="{{ b.w }}" height="{{ chart_h }}" data-tip="{{ b.tip }}" tabindex="0" aria-label="{{ b.tip }}"/>
+        {% if loop.index0 % 3 == 0 %}<text x="{{ b.x + b.w / 2 }}" y="{{ chart_h + 18 }}" text-anchor="middle">{{ "%02d" | format(loop.index0) }}:00</text>{% endif %}
+        {% endfor %}
+      </svg>
+      <p class="small faint" style="margin-top:6px">Actions per hour of the day, added up over the last {{ days }} days.</p>
+      {% else %}
+      <p class="muted small" style="padding:24px 0;text-align:center">No activity in this period yet.</p>
+      {% endif %}
+    </div>
+  </section>
+
+  {# ── Features ── #}
+  <section class="section">
+    <div class="section-head"><h2>Features used</h2></div>
+    {% if u.features %}
+    <div class="list">
+      <table class="data">
+        <thead><tr><th>Feature</th><th style="width:40%"><span class="sr-only" style="position:absolute;left:-9999px">Share</span></th><th class="num">Uses</th><th class="num">People</th></tr></thead>
+        <tbody>
+          {% for f in u.features %}
+          <tr>
+            <td>{{ f.label }}</td>
+            <td><div class="inline-bar" style="width:{{ (f.uses / max_feature * 100) | round(1) }}%"></div></td>
+            <td class="num">{{ "{:,}".format(f.uses) }}</td>
+            <td class="num">{{ f.users }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty" style="padding:28px"><p style="margin:0">No feature use recorded in this period.</p></div>
+    {% endif %}
+  </section>
+
+  {# ── AI health ── #}
+  <section class="section">
+    <div class="section-head"><h2>AI assistant</h2></div>
+    <div class="panel">
+      <dl class="kv">
+        <div><dt>Provider</dt><dd>{{ "Hugging Face" if ai_provider == "huggingface" else "Ollama (local)" }}</dd></div>
+        <div><dt>Model</dt><dd style="font-weight:500;word-break:break-all">{{ ai_model }}</dd></div>
+        <div><dt>Typical time</dt><dd>{% if u.ai_median_ms is not none %}{{ "%.1f" | format(u.ai_median_ms / 1000) }} s{% else %}—{% endif %}</dd></div>
+        <div><dt>Slowest 5%</dt><dd>{% if u.ai_p95_ms is not none %}over {{ "%.1f" | format(u.ai_p95_ms / 1000) }} s{% else %}—{% endif %}</dd></div>
+        <div><dt>Failed requests</dt><dd>{% if u.ai_calls %}{{ "%.1f" | format(u.ai_error_rate * 100) }}%{% else %}—{% endif %}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  {# ── Errors ── #}
+  <section class="section">
+    <div class="section-head"><h2>Server errors</h2></div>
+    {% if u.errors %}
+    <div class="list">
+      <table class="data">
+        <thead><tr><th>When</th><th>Page</th><th class="num">Code</th></tr></thead>
+        <tbody>{% for e in u.errors %}<tr><td>{{ e.ts.strftime("%d %b %H:%M") }}</td><td><code>{{ e.route }}</code></td><td class="num">{{ e.status }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="notice notice-success" style="margin:0">No server errors in this period.</div>
+    {% endif %}
+  </section>
+
+  <p class="small faint" style="margin-top:32px">
+    Data comes from the access log, which is kept for 91 days and then deleted automatically (Computer Crime Act §26).
+    Updated {{ generated_at.strftime("%d %b %Y %H:%M") }} UTC — reload the page for new numbers.
+  </p>
+</div>
+<div class="tip" id="tip" hidden></div>
+<script>
+(function () {
+  var tip = document.getElementById("tip");
+  function show(e) {
+    var t = e.target.closest("[data-tip]"); if (!t) return;
+    tip.textContent = t.dataset.tip; tip.hidden = false;
+    var r = t.getBoundingClientRect();
+    var cx = e.clientX || (r.left + r.width / 2), cy = e.clientY || (r.top + r.height / 2);
+    var x = Math.min(window.innerWidth - tip.offsetWidth - 8, Math.max(8, cx - tip.offsetWidth / 2));
+    tip.style.left = x + "px"; tip.style.top = Math.max(8, cy - tip.offsetHeight - 12) + "px";
+  }
+  function hide() { tip.hidden = true; }
+  document.querySelectorAll("[data-tip]").forEach(function (el) {
+    el.addEventListener("mousemove", show); el.addEventListener("focus", show);
+    el.addEventListener("mouseleave", hide); el.addEventListener("blur", hide);
+  });
+})();
+</script>
+{% endblock %}

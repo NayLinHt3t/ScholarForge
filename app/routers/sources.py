@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
-from app.clients import ollama
+from app.clients import ai
 from app.database import get_db
 from app.dependencies import require_auth
 from app.exceptions import OllamaUnavailableError
@@ -22,7 +22,6 @@ from app.services.citations import format_apa, format_ieee
 log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/projects/{project_id}/sources", tags=["sources"])
-templates = Jinja2Templates(directory="app/templates")
 
 MAX_QUESTION_LEN = 500
 
@@ -183,10 +182,7 @@ async def ask_about_source(
     try:
         answer = await ask_service.ask(source, question)
     except OllamaUnavailableError:
-        return JSONResponse({
-            "error": "The AI assistant isn't running. Start Ollama on your computer "
-                     "(run “ollama serve”), then ask again."
-        }, status_code=503)
+        return JSONResponse({"error": ai.unavailable_message()}, status_code=503)
     except Exception:  # noqa: BLE001
         log.exception("ask failed for source %s", source_id)
         return JSONResponse({"error": "Something went wrong while answering. Please try again."}, status_code=500)
@@ -288,7 +284,7 @@ async def summarize_source(
         f"<paper>\nTitle: {source.title}\n\nAbstract: {source.abstract}\n</paper>"
     )
     try:
-        summary = await ollama.generate(prompt)
+        summary = await ai.generate(prompt)
         library_service.update_source(db, project_id, source_id, ai_summary=summary.strip())
     except OllamaUnavailableError:
         return RedirectResponse(url=f"{base}?summary_error=ollama_down", status_code=303)
