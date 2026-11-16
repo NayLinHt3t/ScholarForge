@@ -156,7 +156,7 @@ class TestNotes:
 
 class TestSettings:
     def test_settings_shows_ai_status(self, client):
-        with patch("app.routers.views.ollama.is_alive", new=AsyncMock(return_value=False)):
+        with patch("app.routers.views.ai.is_alive", new=AsyncMock(return_value=False)):
             resp = client.get("/settings")
         assert resp.status_code == 200
         assert b"Not running" in resp.content
@@ -198,7 +198,7 @@ class TestAskRoute:
     def test_answer_returned_as_json(self, client):
         p1, p2, p3 = self._patches()
         with p1, p2, p3, patch(
-            "app.services.ask.ollama.generate",
+            "app.services.ask.ai.generate",
             new=AsyncMock(return_value="Trust fell.\nQUOTE: We surveyed 300 software engineers across 12 companies."),
         ):
             resp = client.post("/projects/p1/sources/s1/ask", data={"question": "What did they do?"})
@@ -218,11 +218,11 @@ class TestAskRoute:
     def test_ai_down_gives_helpful_error(self, client):
         p1, p2, p3 = self._patches()
         with p1, p2, p3, patch(
-            "app.services.ask.ollama.generate", new=AsyncMock(side_effect=OllamaUnavailableError())
+            "app.services.ask.ai.generate", new=AsyncMock(side_effect=OllamaUnavailableError())
         ):
             resp = client.post("/projects/p1/sources/s1/ask", data={"question": "Hi?"})
         assert resp.status_code == 503
-        assert "ollama serve" in resp.json()["error"]
+        assert "ollama serve" in resp.json()["error"]  # local provider message
 
     def test_wrong_user_rejected(self, client):
         other = FAKE_PROJECT.model_copy(update={"user_id": "someone-else"})

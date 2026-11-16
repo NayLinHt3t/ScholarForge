@@ -112,7 +112,7 @@ a.paper-title:hover { color: var(--accent); }
 
   {% if ollama_down %}
   <div class="alert alert-error">
-    <div><strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and search again.</div>
+    <div>{% if ai_runs_locally() %}<strong>The AI assistant isn't running.</strong> Start Ollama on your computer (run <code>ollama serve</code>) and try again.{% else %}<strong>The AI service isn't responding right now.</strong> Please try again in a minute.{% endif %}</div>
   </div>
   {% endif %}
 
@@ -123,6 +123,10 @@ a.paper-title:hover { color: var(--accent); }
     {% endfor %}
     <div style="margin-top:4px;font-size:.8rem">Showing results from the remaining source only.</div>
   </div>
+  {% endif %}
+
+  {% if results and not ranked %}
+  <div class="alert alert-info"><span>Smart ranking isn't available right now, so papers are shown in the order the search libraries returned them.</span></div>
   {% endif %}
 
   {% if low_confidence %}

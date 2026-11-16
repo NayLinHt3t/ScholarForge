@@ -15,7 +15,7 @@ from fastapi.exception_handlers import http_exception_handler as _default_http_h
 from fastapi.exceptions import HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 
 from app.routers import auth as auth_router
 from app.routers import claims as claims_router
@@ -29,13 +29,17 @@ from app.routers import sources as sources_router
 from app.routers import summary as summary_router
 from app.routers import themes as themes_router
 from app.routers import views as views_router
+from app.routers import admin as admin_router
+from app.monitoring import access_log_middleware, lifespan
 from app.routers import workspace_outline as workspace_outline_router
 
-app = FastAPI(title="ScholarForge")
+app = FastAPI(title="ScholarForge", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-_templates = Jinja2Templates(directory="app/templates")
+# Access log for every request (Computer Crime Act §26) — also feeds the /admin usage dashboard
+app.middleware("http")(access_log_middleware)
 app.include_router(auth_router.router)
 app.include_router(projects_router.router)
+app.include_router(admin_router.router)   # /admin portal: own login, usage dashboard
 app.include_router(views_router.router)   # Home-level screens: My Library, My Notes, Settings
 # workspace MVP routes (order matters: more specific paths first)
 app.include_router(sources_router.router)
@@ -65,4 +69,4 @@ async def root():
 
 @app.get("/terms")
 async def terms(request: Request):
-    return _templates.TemplateResponse("terms.html", {"request": request})
+    return templates.TemplateResponse("terms.html", {"request": request})

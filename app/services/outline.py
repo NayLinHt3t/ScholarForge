@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from google.cloud import firestore
 
-from app.clients import ollama
+from app.clients import ai
 from app.collections import OUTLINES, PROJECTS
 from app.exceptions import OllamaUnavailableError
 from app.models import Outline, SavedResource
@@ -349,7 +349,7 @@ async def generate(
     if not resources:
         raise ValueError("No saved resources to generate from.")
 
-    if not await ollama.is_alive():
+    if not await ai.is_alive():
         raise OllamaUnavailableError()
 
     all_claims = claims_service.list_claims(db, project_id)
@@ -362,7 +362,7 @@ async def generate(
         prompt = _build_full_prompt(resources)
 
     t_llm = time.perf_counter()
-    raw = await ollama.generate(prompt)
+    raw = await ai.generate(prompt)
     llm_ms = int((time.perf_counter() - t_llm) * 1000)
 
     sections = _parse_sections(raw)
@@ -406,11 +406,11 @@ async def regenerate_section(
         raise ValueError(f"Section '{section_key}' cannot be regenerated.")
 
     resources = library.list_resources(db, project_id)
-    if not await ollama.is_alive():
+    if not await ai.is_alive():
         raise OllamaUnavailableError()
 
     t_llm = time.perf_counter()
-    raw = await ollama.generate(_build_section_prompt(resources, section_key, outline.sections))
+    raw = await ai.generate(_build_section_prompt(resources, section_key, outline.sections))
     llm_ms = int((time.perf_counter() - t_llm) * 1000)
 
     new_sections = _parse_sections(raw)

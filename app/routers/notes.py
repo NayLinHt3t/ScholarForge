@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
 from app.database import get_db
@@ -11,7 +11,6 @@ from app.services import notes as notes_service
 from app.services import projects as project_service
 
 router = APIRouter(prefix="/projects/{project_id}/notes", tags=["notes"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _guard(db, project_id, user):

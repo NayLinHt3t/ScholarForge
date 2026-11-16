@@ -1,10 +1,10 @@
 """Top-level screens of the simplified UI: My Library, My Notes, Settings."""
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
-from app.clients import ollama
+from app.clients import ai
 from app.config import GENERATE_MODEL
 from app.database import get_db
 from app.dependencies import require_auth
@@ -13,7 +13,6 @@ from app.models.resource import READ_STATUSES
 from app.services import overview as overview_service
 
 router = APIRouter(tags=["views"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _matches(text: str, q: str) -> bool:
@@ -96,7 +95,7 @@ async def settings(
     request: Request,
     user: User = Depends(require_auth),
 ):
-    ai_ready = await ollama.is_alive()
+    ai_ready = await ai.is_alive()
     return templates.TemplateResponse("settings.html", {
         "request": request, "user": user,
         "ai_ready": ai_ready, "model": GENERATE_MODEL,

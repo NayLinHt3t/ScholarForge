@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
 from app.database import get_db
@@ -16,7 +16,6 @@ from app.services.citations import (
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _home(request: Request, user: User, db, error: str | None = None, status_code: int = 200):

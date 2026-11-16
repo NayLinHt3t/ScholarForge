@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{# Admin portal layout — separate from the student app: no student navigation. #}
+{% block head %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block styles %}
+.admin-bar { background: #1f2328; color: #fff; }
+.admin-bar-inner { max-width: 1000px; margin: 0 auto; padding: 12px var(--s5); display: flex; align-items: center; gap: var(--s3); }
+.admin-bar .brand-mark { background: #fff; color: #1f2328; }
+.admin-bar .title { font-weight: 700; }
+.admin-bar .tag { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: rgba(255,255,255,.14); padding: 2px 8px; border-radius: 999px; }
+.admin-bar .who { font-size: var(--fs-sm); color: rgba(255,255,255,.7); margin-left: auto; }
+.admin-bar .btn-out { height: 30px; padding: 0 12px; border-radius: var(--radius); border: 1px solid rgba(255,255,255,.3); color: #fff; font-size: var(--fs-sm); font-weight: 600; }
+.admin-bar .btn-out:hover { background: rgba(255,255,255,.1); }
+{% block admin_styles %}{% endblock %}
+{% endblock %}
+{% block layout %}
+<header class="admin-bar">
+  <div class="admin-bar-inner">
+    <span class="brand-mark">SF</span>
+    <span class="title">ScholarForge</span>
+    <span class="tag">Admin</span>
+    {% if admin %}
+    <span class="who">Signed in as {{ admin.username }}</span>
+    <form method="post" action="/admin/logout"><button class="btn-out" type="submit">Sign out</button></form>
+    {% endif %}
+  </div>
+</header>
+<main>
+  {% block admin_body %}{% endblock %}
+</main>
+{% endblock %}

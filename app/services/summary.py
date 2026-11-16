@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from google.cloud import firestore
 
-from app.clients import ollama
+from app.clients import ai
 from app.exceptions import OllamaUnavailableError
 from app.models import SavedResource
 from app.services import citations, library
@@ -86,11 +86,11 @@ async def generate(
     if not resources:
         raise ValueError("No valid resources selected.")
 
-    if not await ollama.is_alive():
+    if not await ai.is_alive():
         raise OllamaUnavailableError()
 
     t_llm = time.perf_counter()
-    raw = await ollama.generate(_build_prompt(project_name, resources))
+    raw = await ai.generate(_build_prompt(project_name, resources))
     llm_ms = int((time.perf_counter() - t_llm) * 1000)
 
     invalid = _validate_citations(raw, len(resources))

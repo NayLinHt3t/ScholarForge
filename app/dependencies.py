@@ -18,7 +18,11 @@ def get_current_user(
     session = auth_service.get_session(db, token)
     if not session:
         return None
-    return auth_service.get_user_by_id(db, session.user_id)
+    user = auth_service.get_user_by_id(db, session.user_id)
+    if user:
+        # picked up by the access-log middleware (who did what)
+        request.state.user_id = user.id
+    return user
 
 
 def require_auth(user: User | None = Depends(get_current_user)) -> User:

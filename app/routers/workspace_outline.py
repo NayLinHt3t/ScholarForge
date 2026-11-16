@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
 from app.database import get_db
@@ -14,7 +14,6 @@ from app.services import projects as project_service
 from app.services import workspace_export
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["workspace_outline"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 def _guard(db, project_id, user):

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse, Response
-from fastapi.templating import Jinja2Templates
+from app.templating import templates
 from google.cloud import firestore
 
 from app.database import get_db
@@ -13,7 +13,6 @@ from app.services import projects as project_service
 from app.services.outline import REGENERABLE_SECTIONS, SECTION_DISPLAY_NAMES, SECTION_ORDER
 
 router = APIRouter(tags=["outline"])
-templates = Jinja2Templates(directory="app/templates")
 
 
 @router.post("/projects/{project_id}/outlines")

@@ -1,0 +1,4 @@
+# Extra packages for the hosted (Cloud Run) image.
+# Local development only needs requirements.txt.
+-r requirements.txt
+fastembed>=0.4,<1.0      # on-server embeddings for semantic search (CPU, ONNX)

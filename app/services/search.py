@@ -4,7 +4,7 @@ import math
 import time
 from dataclasses import dataclass, field
 
-from app.clients import ollama, openalex, semantic_scholar
+from app.clients import ai, openalex, semantic_scholar
 from app.config import SEARCH_LOW_CONFIDENCE_THRESHOLD, SEARCH_MAX_PER_SOURCE, SEARCH_TOP_K
 from app.exceptions import OllamaUnavailableError
 from app.models.search import SearchResult
@@ -100,13 +100,11 @@ class SearchResponse:
     results: list[SearchResult]
     low_confidence: bool
     source_errors: list[str] = field(default_factory=list)
+    ranked: bool = True        # False → smart ranking unavailable, results in source order
 
 
 async def run(idea: str) -> SearchResponse:
     t0 = time.perf_counter()
-
-    if not await ollama.is_alive():
-        raise OllamaUnavailableError()
 
     t_api = time.perf_counter()
     ss_raw, oa_raw = await asyncio.gather(
@@ -142,7 +140,14 @@ async def run(idea: str) -> SearchResponse:
 
     t_embed = time.perf_counter()
     texts = [idea] + [f"{c.title}. {c.abstract or ''}" for c in candidates]
-    embeddings = await asyncio.gather(*[ollama.embed(t) for t in texts])
+    try:
+        embeddings = await ai.embed_many(texts)
+    except OllamaUnavailableError:
+        # Ranking model unavailable (not running / not enough memory / turned off):
+        # still show the papers, in the order the libraries returned them.
+        logger.warning("search.unranked reason=embeddings_unavailable candidates=%d", len(candidates))
+        return SearchResponse(results=candidates[:SEARCH_TOP_K], low_confidence=False,
+                              source_errors=source_errors, ranked=False)
     embed_ms = int((time.perf_counter() - t_embed) * 1000)
 
     t_rank = time.perf_counter()
