@@ -1,9 +1,23 @@
 import os
 
 # ── AI provider ──────────────────────────────────────────────────────────────
-# "ollama"      → models run locally on this machine (default, development)
-# "huggingface" → Hugging Face Inference Providers (used when hosted)
+# Chat / text generation:
+#   "ollama"      → models run locally on this machine (default, development)
+#   "groq"        → Groq free tier (hosted, $0)
+#   "huggingface" → Hugging Face Inference Providers (hosted, paid credits)
 AI_PROVIDER: str = os.environ.get("AI_PROVIDER", "ollama").strip().lower()
+# Embeddings (semantic search). Default follows AI_PROVIDER; Groq has no embeddings,
+# so with "groq" they run on the server itself ("local", FastEmbed).
+EMBED_PROVIDER: str = os.environ.get(
+    "EMBED_PROVIDER", {"groq": "local"}.get(AI_PROVIDER, AI_PROVIDER)
+).strip().lower()
+
+GROQ_API_KEY: str = os.environ.get("GROQ_API_KEY", "")
+GROQ_BASE_URL: str = os.environ.get("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+GROQ_MODEL: str = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
+
+LOCAL_EMBED_MODEL: str = os.environ.get("LOCAL_EMBED_MODEL", "BAAI/bge-small-en-v1.5")
+LOCAL_EMBED_CACHE: str | None = os.environ.get("LOCAL_EMBED_CACHE") or None
 
 OLLAMA_BASE_URL: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL: str = "nomic-embed-text"

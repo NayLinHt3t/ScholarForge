@@ -11,7 +11,7 @@ import contextvars
 import time
 
 from app import config
-from app.clients import huggingface, ollama
+from app.clients import groq, huggingface, local_embed, ollama
 from app.exceptions import AIUnavailableError
 
 # Per-request AI usage, read by the access-log middleware.
@@ -35,19 +35,31 @@ def _record(started: float, failed: bool) -> None:
 
 
 def provider() -> str:
-    return "huggingface" if config.AI_PROVIDER == "huggingface" else "ollama"
+    """Chat provider: ollama | groq | huggingface."""
+    p = config.AI_PROVIDER
+    return p if p in ("groq", "huggingface") else "ollama"
+
+
+def embed_provider() -> str:
+    """Embedding provider: ollama | huggingface | local."""
+    p = config.EMBED_PROVIDER
+    return p if p in ("huggingface", "local") else "ollama"
 
 
 def runs_locally() -> bool:
     return provider() == "ollama"
 
 
+def service_name() -> str:
+    return {"groq": "Groq", "huggingface": "Hugging Face", "ollama": "Ollama (on this computer)"}[provider()]
+
+
 def model_name() -> str:
-    return config.HF_CHAT_MODEL if provider() == "huggingface" else config.GENERATE_MODEL
+    return {"groq": config.GROQ_MODEL, "huggingface": config.HF_CHAT_MODEL}.get(provider(), config.GENERATE_MODEL)
 
 
 def _client():
-    return huggingface if provider() == "huggingface" else ollama
+    return {"groq": groq, "huggingface": huggingface}.get(provider(), ollama)
 
 
 async def is_alive() -> bool:
@@ -68,7 +80,10 @@ async def generate(prompt: str) -> str:
 async def embed_many(texts: list[str]) -> list[list[float]]:
     t = time.perf_counter()
     try:
-        if provider() == "huggingface":
+        ep = embed_provider()
+        if ep == "local":
+            out = await local_embed.embed_many(texts)
+        elif ep == "huggingface":
             out = await huggingface.embed_many(texts)
         else:
             out = list(await asyncio.gather(*[ollama.embed(x) for x in texts]))

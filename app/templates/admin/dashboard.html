@@ -148,7 +148,7 @@ table.data .num { text-align: right; width: 90px; }
     <div class="section-head"><h2>AI assistant</h2></div>
     <div class="panel">
       <dl class="kv">
-        <div><dt>Provider</dt><dd>{{ "Hugging Face" if ai_provider == "huggingface" else "Ollama (local)" }}</dd></div>
+        <div><dt>Provider</dt><dd>{{ {"groq": "Groq", "huggingface": "Hugging Face"}.get(ai_provider, "Ollama (local)") }}</dd></div>
         <div><dt>Model</dt><dd style="font-weight:500;word-break:break-all">{{ ai_model }}</dd></div>
         <div><dt>Typical time</dt><dd>{% if u.ai_median_ms is not none %}{{ "%.1f" | format(u.ai_median_ms / 1000) }} s{% else %}—{% endif %}</dd></div>
         <div><dt>Slowest 5%</dt><dd>{% if u.ai_p95_ms is not none %}over {{ "%.1f" | format(u.ai_p95_ms / 1000) }} s{% else %}—{% endif %}</dd></div>
