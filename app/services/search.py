@@ -4,6 +4,7 @@ import math
 import time
 from dataclasses import dataclass, field
 
+from app import config
 from app.clients import ai, openalex, semantic_scholar
 from app.config import SEARCH_LOW_CONFIDENCE_THRESHOLD, SEARCH_MAX_PER_SOURCE, SEARCH_TOP_K
 from app.exceptions import OllamaUnavailableError
@@ -117,20 +118,32 @@ async def run(idea: str) -> SearchResponse:
     candidates: list[SearchResult] = []
     source_errors: list[str] = []
 
+    from httpx import HTTPStatusError
+
+    def _status(err) -> int | None:
+        return err.response.status_code if isinstance(err, HTTPStatusError) else None
+
+    # Messages shown to students are plain; the technical reason goes to the server log.
     if isinstance(ss_raw, Exception):
-        from httpx import HTTPStatusError
-        if isinstance(ss_raw, HTTPStatusError) and ss_raw.response.status_code == 429:
-            source_errors.append("Semantic Scholar (rate-limited — add SEMANTIC_SCHOLAR_API_KEY to .env for higher limits)")
-            logger.warning("search.api.rate_limited source=semantic_scholar")
+        if _status(ss_raw) == 429:
+            source_errors.append("Semantic Scholar is busy right now")
+            logger.warning("search.api.rate_limited source=semantic_scholar "
+                           "hint=set SEMANTIC_SCHOLAR_API_KEY for a higher limit")
         else:
-            source_errors.append("Semantic Scholar")
+            source_errors.append("Semantic Scholar didn't respond")
             logger.warning("search.api.error source=semantic_scholar error=%s", ss_raw)
     else:
         candidates.extend(_normalize_ss(ss_raw))
 
     if isinstance(oa_raw, Exception):
-        source_errors.append("OpenAlex")
-        logger.warning("search.api.error source=openalex error=%s", oa_raw)
+        source_errors.append("OpenAlex isn't available right now")
+        st = _status(oa_raw)
+        if st in (401, 403, 429) or not config.OPENALEX_API_KEY:
+            logger.warning("search.api.error source=openalex status=%s key_set=%s "
+                           "hint=OpenAlex needs a free API key (OPENALEX_API_KEY, openalex.org/settings/api)",
+                           st, bool(config.OPENALEX_API_KEY))
+        else:
+            logger.warning("search.api.error source=openalex error=%s", oa_raw)
     else:
         candidates.extend(_normalize_oa(oa_raw))
 

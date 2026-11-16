@@ -172,3 +172,18 @@ def test_password_tool_rejects_short(monkeypatch):
     from app.tools import admin_password
     monkeypatch.setattr(admin_password.getpass, "getpass", lambda prompt="": "short")
     assert admin_password.main() == 1
+
+
+def test_dashboard_saves_waiting_log_entries_first(admin_cfg, web, mock_db):
+    from app import monitoring
+    monitoring._buffer.clear()
+    monitoring._enqueue(mock_db, {"ts": datetime.now(timezone.utc), "user_id": "u1", "feature": "Home", "status": 200})
+    with (
+        patch("app.routers.admin.admin_auth.get_session", return_value=_valid_session()),
+        patch("app.routers.admin.usage_service.load", return_value=([], False)),
+        patch("app.routers.admin.usage_service.count_collection", return_value=1),
+    ):
+        resp = web.get("/admin")
+    assert resp.status_code == 200
+    assert not [e for e in monitoring._buffer if e.get("user_id") == "u1"]   # flushed before reading
+    monitoring._buffer.clear()

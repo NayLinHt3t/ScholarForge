@@ -1,8 +1,18 @@
 import httpx
 
+from app import config
+
 _BASE = "https://api.openalex.org/works"
-_MAILTO = "linmyatooa7@gmail.com"
 _SELECT = "id,doi,title,publication_year,primary_location,open_access,best_oa_location,authorships,abstract_inverted_index"
+
+
+def _params(p: dict) -> dict:
+    """Add the API key (required since Feb 2026) and optional contact email."""
+    if config.OPENALEX_API_KEY:
+        p["api_key"] = config.OPENALEX_API_KEY
+    if config.OPENALEX_MAILTO:
+        p["mailto"] = config.OPENALEX_MAILTO
+    return p
 
 
 def reconstruct_abstract(inverted: dict) -> str:
@@ -17,13 +27,12 @@ async def search(query: str, limit: int = 15) -> list[dict]:
     async with httpx.AsyncClient(timeout=15.0) as client:
         r = await client.get(
             _BASE,
-            params={
+            params=_params({
                 "search": query,
                 "filter": "is_oa:true",
                 "per_page": limit,
                 "select": _SELECT,
-                "mailto": _MAILTO,
-            },
+            }),
         )
         r.raise_for_status()
         return r.json().get("results", [])

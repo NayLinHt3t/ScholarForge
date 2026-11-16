@@ -3,6 +3,7 @@
 Student accounts can never open these pages — admin access uses separate
 credentials (ADMIN_USERNAME / ADMIN_PASSWORD_HASH) and a separate cookie.
 """
+import asyncio
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -13,6 +14,7 @@ from app import config
 from app.clients import ai
 from app.collections import PROJECTS, USERS
 from app.database import get_db
+from app import monitoring
 from app.monitoring import client_ip
 from app.services import admin_auth
 from app.services import usage as usage_service
@@ -122,6 +124,8 @@ async def admin_dashboard(
     db: firestore.Client = Depends(get_db),
 ):
     days = days if days in PERIODS else 7
+    # Save log entries still waiting in memory, so the dashboard includes activity up to now.
+    await asyncio.to_thread(monitoring.flush, db)
     now = datetime.now(timezone.utc)
     entries, truncated = usage_service.load(db, days, now=now)
     u = usage_service.summarize(entries, days, now, config.DASHBOARD_TZ, truncated=truncated)

@@ -44,6 +44,14 @@ Render deploys from GitHub. If `NayLinHt3t/ScholarForge` is not your own GitHub 
      -d '{"model":"openai/gpt-oss-20b","messages":[{"role":"user","content":"Say hi"}]}' | head -c 300; echo
    ```
 
+## Step 2b — Get a free OpenAlex key (needed for paper search)
+
+Since February 2026 OpenAlex needs a free API key.
+
+1. Create a free account at https://openalex.org.
+2. Open https://openalex.org/settings/api and copy your API key.
+3. Put it in your local `.env` as `OPENALEX_API_KEY=...` (and in Render in step 4).
+
 ## Step 3 — Make the admin password hash
 
 ```bash
@@ -78,6 +86,7 @@ Copy **only the hash** (the part starting `$2b$12$`, 60 characters, **without** 
 | `ADMIN_USERNAME` | `admin` (or your choice) |
 | `ADMIN_PASSWORD_HASH` | the 60-character hash from step 3, **no quotes** |
 | `DASHBOARD_TZ` | `Asia/Bangkok` |
+| `OPENALEX_API_KEY` | your free OpenAlex key (see step 2b) |
 
 5. **Secret Files** → *Add Secret File*:
    - Filename: `serviceAccountKey.json`
@@ -102,6 +111,8 @@ When it says **Live**, your URL is at the top: `https://scholarforge-xxxx.onrend
 | You see | Fix |
 |---|---|
 | Logs show **"Out of memory"**, or the service restarts during a search | The ranking model doesn't fit in 512 MB. Add env var `EMBED_PROVIDER` = `none` → **Save, rebuild and deploy**. Search keeps working without smart ranking. |
+| "OpenAlex isn't available right now" | `OPENALEX_API_KEY` missing or wrong, or its free daily allowance is used up |
+| "Semantic Scholar is busy right now" | Its shared free limit is busy — try again in a minute. Optional: apply for a free key and set `SEMANTIC_SCHOLAR_API_KEY` |
 | "The AI service isn't responding right now" | Groq free limit reached; wait a minute (or until tomorrow for the daily limit). Check the key in Environment. |
 | Pages error with `PermissionDenied` / `403` in logs | The secret file is wrong or missing, or the filename isn't exactly `serviceAccountKey.json` |
 | `Quota exceeded` / `RESOURCE_EXHAUSTED` in logs | Firestore's free daily limit is used up; it resets at midnight Pacific time (3 pm in Thailand) |
