@@ -118,10 +118,10 @@ a.paper-title:hover { color: var(--accent); }
 
   {% if source_errors %}
   <div class="alert alert-warning">
-    {% for err in source_errors %}
-      <div>⚠ {{ err }}{% if not loop.last %};{% endif %}</div>
-    {% endfor %}
-    <div style="margin-top:4px;font-size:.8rem">Showing results from the remaining source only.</div>
+    <div>
+      {{ source_errors | join(". ") }}.
+      {% if results %}Showing papers from the other library only.{% else %}No paper library answered, so there are no results this time. Please try again in a minute.{% endif %}
+    </div>
   </div>
   {% endif %}
 

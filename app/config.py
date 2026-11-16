@@ -30,6 +30,9 @@ HF_CHAT_MODEL: str = os.environ.get("HF_CHAT_MODEL", "openai/gpt-oss-20b")
 HF_EMBED_MODEL: str = os.environ.get("HF_EMBED_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
 
 SEMANTIC_SCHOLAR_API_KEY: str = os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "")
+# OpenAlex needs a free API key since Feb 2026 (openalex.org/settings/api)
+OPENALEX_API_KEY: str = os.environ.get("OPENALEX_API_KEY", "")
+OPENALEX_MAILTO: str = os.environ.get("OPENALEX_MAILTO", "")
 
 # ── Hosting / monitoring ─────────────────────────────────────────────────────
 # Admin portal (/admin) — separate from student accounts.
