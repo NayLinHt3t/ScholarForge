@@ -11,6 +11,7 @@ from app.dependencies import require_auth
 from app.exceptions import DuplicateResourceError, OllamaUnavailableError
 from app.models import User
 from app.services import library as library_service
+from app.services import paper_link
 from app.services import projects as project_service
 from app.services import search as search_service
 
@@ -79,45 +80,36 @@ async def add_by_url(
         return RedirectResponse(url="/projects", status_code=303)
 
     base = f"/projects/{project_id}/search"
-    paper_id = ss_client.extract_paper_id(paper_url.strip())
-    if not paper_id:
-        return RedirectResponse(url=f"{base}?url_error=invalid", status_code=303)
-
     try:
-        raw = await ss_client.fetch_by_id(paper_id)
-    except Exception as e:
-        from httpx import HTTPStatusError
-        if isinstance(e, HTTPStatusError) and e.response.status_code == 429:
-            return RedirectResponse(url=f"{base}?url_error=busy", status_code=303)
-        return RedirectResponse(url=f"{base}?url_error=fetch", status_code=303)
-
-    if not raw:
-        return RedirectResponse(url=f"{base}?url_error=notfound", status_code=303)
-
-    ext = raw.get("externalIds") or {}
-    title = raw.get("title") or ""
-    authors = [a["name"] for a in (raw.get("authors") or [])]
-    abstract = raw.get("abstract")
+        info = await paper_link.resolve(paper_url)
+    except paper_link.LinkError as e:
+        if e.kind == "manual":
+            # A link we can't look up (e.g. a PDF with no DOI): let the student type the
+            # details, with the link already filled in.
+            return RedirectResponse(
+                url=f"/projects/{project_id}/sources?link={quote(paper_url.strip())}", status_code=303)
+        return RedirectResponse(url=f"{base}?url_error={e.kind}", status_code=303)
 
     embedding = None
     try:
-        embedding = await ai.embed(f"{title}. {abstract or ''}")
+        embedding = await ai.embed(f"{info.title}. {info.abstract or ''}")
     except OllamaUnavailableError:
         pass
 
     try:
         library_service.save_resource(
             db, project_id,
-            title=title,
-            authors=authors,
-            year=raw.get("year"),
-            venue=raw.get("venue") or None,
-            doi=ext.get("DOI"),
-            arxiv_id=ext.get("ArXiv"),
-            url=raw.get("url"),
-            abstract=abstract,
-            source="semantic_scholar",
+            title=info.title,
+            authors=info.authors,
+            year=info.year,
+            venue=info.venue,
+            doi=info.doi,
+            arxiv_id=info.arxiv_id,
+            url=info.best_url,          # PDF first, then DOI / arXiv / landing page
+            abstract=info.abstract,
+            source=info.source,
             embedding=embedding,
+            access_status="open_access" if info.pdf_url else "unknown",
         )
     except DuplicateResourceError:
         return RedirectResponse(url=f"{base}?duplicate=1", status_code=303)

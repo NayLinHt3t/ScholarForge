@@ -36,3 +36,16 @@ async def search(query: str, limit: int = 15) -> list[dict]:
         )
         r.raise_for_status()
         return r.json().get("results", [])
+
+
+async def fetch_work(identifier: str) -> dict | None:
+    """One work by OpenAlex id (W123…) or "doi:10.…". Returns None when not found."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        r = await client.get(
+            f"{_BASE}/{identifier}",
+            params=_params({"select": _SELECT + ",locations,display_name"}),
+        )
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    return r.json()

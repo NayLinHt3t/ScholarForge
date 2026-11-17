@@ -36,8 +36,11 @@
     </p>
 
     <div class="row" style="margin-top:16px">
-      {% if source.url %}
-      <a class="btn btn-secondary btn-sm" href="{{ source.url }}" target="_blank" rel="noopener">{{ icon("external") }} Open full text</a>
+      {% set read_url = source.url %}
+      {% if read_url and "semanticscholar.org" in read_url and source.doi %}{% set read_url = "https://doi.org/" ~ source.doi %}{% endif %}
+      {% if read_url %}
+      {% set lower_url = read_url.lower().split("?")[0] %}
+      <a class="btn btn-secondary btn-sm" href="{{ read_url }}" target="_blank" rel="noopener">{{ icon("external") }} {{ "Open PDF" if lower_url.endswith(".pdf") or "/pdf/" in lower_url or lower_url.endswith("/pdf") else "Open full text" }}</a>
       {% endif %}
       <form method="post" action="/projects/{{ project.id }}/sources/{{ source.id }}/status" class="row" style="gap:6px">
         <label for="rs" class="small muted" style="margin:0;font-weight:500">Status</label>
