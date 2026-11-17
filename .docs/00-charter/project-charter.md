@@ -5,14 +5,21 @@ ScholarForge — Local Research & Idea/Outline Assistant for Students
 
 ## Team Members
 
-| Student ID | Name |
-|---|---|
-| 6631503079 | Nay Lin Htet |
-| 6631503066 | Lin Myat Oo |
-| 6631503067 | Min Htet Kaung Pyae |
-| 6631503075 | Myo Min Min Oo |
+| Student ID | Name | Role |
+|---|---|---|
+| 6631503079 | Nay Lin Htet | Product Owner |
+| 6631503066 | Lin Myat Oo | AI Lead / Designer |
+| 6631503067 | Min Htet Kaung Pyae | Tech Lead |
+| 6631503075 | Myo Min Min Oo | QA / Test |
 
-> Reusing the team roster from the shared charter template — update this table if it differs for this project.
+## Team Rules
+
+- **Meetings**: short sync at the start of each work session; async updates in the team chat otherwise.
+- **Decisions**: Product Owner has final call on scope/priority; Tech Lead has final call on implementation approach when the team disagrees.
+- **Branching**: feature branches off `main`, merge via PR after at least one other member reviews; `main` stays deployable.
+- **Code review**: every PR gets a look from someone other than the author before merge; the reviewer checks correctness and that tests still pass.
+- **Communication**: blockers get flagged immediately in chat, not saved for the next meeting.
+- **AI use**: see root [`CLAUDE.md`](../../CLAUDE.md) for how the team uses AI tools; AI-assisted work still needs a human review before merge.
 
 ## 1. Purpose
 

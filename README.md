@@ -1,8 +1,10 @@
 # ScholarForge
 
-**ScholarForge is a privacy-focused research assistant that uses semantic retrieval and locally hosted LLMs to help students discover, organize, summarize, and develop research ideas from academic sources while maintaining deterministic citation traceability.**
+**ScholarForge is a privacy-focused research assistant that uses semantic retrieval and LLMs to help students discover, organize, summarize, and develop research ideas from academic sources while maintaining deterministic citation traceability.**
 
-No third-party login, no external LLM API. Everything runs on the student's own machine.
+No third-party login — accounts are local to this app. AI provider is configurable via `AI_PROVIDER`: **Ollama** (fully local, no data leaves the machine — default for development) or **Groq** (hosted free-tier API — used for the live deployment below, since Ollama needs a GPU host). Either way, no personal research content is ever sent to a third-party identity provider.
+
+**Live deployment**: https://scholarforge-tibn.onrender.com (runs on `AI_PROVIDER=groq`)
 
 ### Engineering highlights
 - Semantic search with embedding-based cosine-similarity ranking
@@ -36,12 +38,14 @@ No third-party login, no external LLM API. Everything runs on the student's own 
 
 ## Prerequisites
 
-1. **Ollama** running locally with the required models:
-   ```bash
-   ollama pull nomic-embed-text
-   ollama pull llama3.2:3b
-   ollama serve
-   ```
+1. **AI provider** — pick one via `AI_PROVIDER` in `.env`:
+   - `ollama` (default, local, no API key): run locally with the required models:
+     ```bash
+     ollama pull nomic-embed-text
+     ollama pull llama3.2:3b
+     ollama serve
+     ```
+   - `groq` (hosted, free tier, used for the live deployment): set `GROQ_API_KEY` — no local model pulls needed. See [`.docs/05-deploy/render.md`](.docs/05-deploy/render.md) for the full hosted setup.
 
 2. **Google Cloud Firestore** — create a Firebase project, download a service-account key, and set:
    ```
@@ -62,6 +66,8 @@ uvicorn app.main:app --port 8000 --reload
 ```
 
 Open `http://localhost:8000` — sign up, create a project, and start researching.
+
+**Test account**: there's no pre-seeded account — signup is self-serve (email + password, no approval step). For grading/testing, create one directly: e.g. `grader@example.com` / any password meeting the length check.
 
 ## Repo structure
 
