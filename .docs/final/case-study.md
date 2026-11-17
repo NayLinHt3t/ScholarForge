@@ -5,7 +5,7 @@
 
 ## Problem
 
-Students starting a thesis, research paper, or course project hit the same bottleneck: they have an *idea*, not yet the exact title/keyword a library search needs. Sources then scatter across bookmarks and notes, citations get hand-formatted (slow, error-prone), and going from "sources gathered" to "first words written" is the hardest step most tools stop short of helping with. Existing AI research tools add subscription cost, third-party login, and send research content to an external cloud vendor.
+Students starting a thesis, research paper, or course project hit the same bottleneck: they have an *idea*, not yet the exact title/keyword a library search needs. Sources then scatter across bookmarks and notes, citations get hand-formatted (slow, error-prone), and going from "sources gathered" to "first words written" is the hardest step most tools stop short of helping with. Existing AI research tools add subscription cost and mandatory third-party login.
 
 Full problem statement and target users: [proposal.md](../00-proposal/proposal.md).
 

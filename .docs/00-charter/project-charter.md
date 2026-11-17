@@ -39,7 +39,7 @@ In addition, existing AI-assisted research tools carry costs and trust concerns 
 - Let students organize their research into separate projects, so different assignments and theses never mix.
 - Allow students to save relevant papers into a project's library with automatically formatted citations (APA, MLA, Chicago, IEEE).
 - Generate a structured idea/outline scaffold from a project's saved sources to reduce the blank-page problem — without claiming to produce a finished, submission-ready paper.
-- Keep every account, all stored data, and the AI models used entirely on the student's own machine — no third-party identity provider, no external LLM API, no cloud hosting.
+- Keep every account local to the app — no third-party identity provider, ever. AI provider is swappable (`AI_PROVIDER=ollama|groq|huggingface`): fully local by default, with a free hosted fallback for grading access without a GPU host.
 - Ensure every citation in a generated outline traces back to a real saved source, with no invented references.
 
 ## 4. Scope
@@ -75,7 +75,7 @@ The system will include:
 
 ## 6. Proposed Solution
 
-Develop a locally-run web application (FastAPI backend, SQLite database, local Ollama models) where a student signs up with their own account and creates a separate project per assignment or thesis. Within a project, the student describes a research idea in plain language and receives semantically ranked papers pulled from academic APIs, saves the relevant ones with automatically formatted citations, and generates a read-only idea/outline scaffold — bullet-point ideas and short example passages grounded only in that project's saved sources, following IEEE structure by default. The student then copies or downloads the scaffold and writes the actual paper themselves, in their own tool.
+Develop a locally-run web application (FastAPI backend, Google Cloud Firestore database, swappable AI provider — local Ollama by default, Groq free tier for the hosted deployment) where a student signs up with their own account and creates a separate project per assignment or thesis. Within a project, the student describes a research idea in plain language and receives semantically ranked papers pulled from academic APIs, saves the relevant ones with automatically formatted citations, and generates a read-only idea/outline scaffold — bullet-point ideas and short example passages grounded only in that project's saved sources, following IEEE structure by default. The student then copies or downloads the scaffold and writes the actual paper themselves, in their own tool.
 
 ## 7. Core Workflow
 
@@ -93,7 +93,7 @@ Sign Up / Log In → Create Project → Describe Idea → Discover Papers → Sa
 - Citation-marker validation (no hallucinated references)
 - Per-section outline regeneration
 - Read-only outline view with copy and export (PDF, Markdown) — no in-app text editor
-- Local LLM via Ollama for embeddings and generation (no external AI API)
+- Local LLM via Ollama for embeddings and generation by default; swappable to Groq (hosted free tier) or Hugging Face when a GPU host isn't available
 - Graceful degradation when an external paper source or the local AI engine is unavailable
 
 ## 9. Success Criteria / KPIs
@@ -102,7 +102,7 @@ Sign Up / Log In → Create Project → Describe Idea → Discover Papers → Sa
 - A single tool covers idea search, source saving, and outline drafting instead of scattered tools and bookmarks.
 - Reduced time and errors spent manually formatting citations.
 - Reduced blank-page time when starting a proposal or paper section.
-- Zero third-party identity provider and zero external AI API calls, confirmed in the running system.
+- Zero third-party identity provider, confirmed in the running system (AI provider is swappable and configurable — not restricted to local-only).
 - Deleting one project never affects another project's saved resources or outlines.
 - Every citation in a generated outline traces to a real saved source — no invented references.
 - Users can run the entire system locally through a standard web browser, with no cloud account required.
@@ -114,5 +114,5 @@ Sign Up / Log In → Create Project → Describe Idea → Discover Papers → Sa
 | Papers found only by exact keyword or title match | Papers found by describing the underlying idea (semantic search) |
 | Sources and citations scattered across bookmarks, notes, and separate tools | One local, project-scoped library with auto-formatted citations |
 | Blank-page start when writing a proposal or paper | AI-generated idea/outline scaffold to kick off writing |
-| Reliance on third-party logins and cloud AI tools with unclear data handling | Fully local accounts and a local AI engine — no data leaves the machine |
+| Reliance on third-party logins and cloud AI tools with unclear data handling | Fully local accounts (no third-party identity provider, ever); AI engine runs locally by default, with a transparent, swappable hosted fallback |
 | Different projects' notes and sources mixed together | Separate projects keep each assignment's resources and outlines isolated |

@@ -9,7 +9,7 @@ No third-party login — accounts are local to this app. AI provider is configur
 ### Engineering highlights
 - Semantic search with embedding-based cosine-similarity ranking
 - Project-scoped data isolation enforced at every API and database layer
-- Local LLM/RAG pipeline (Ollama — no external AI API)
+- Local-first LLM/RAG pipeline (Ollama by default; Groq/Hugging Face as swappable hosted fallbacks — see AI Provider below)
 - Deterministic citation generation — LLM produces `[N]` markers only; the application owns numbering, metadata, and formatting
 - LLM output validation — every generated `[N]` marker is validated before persistence; invalid outputs are rejected with a retry path
 - Structured observability — search, embedding, ranking, and generation latencies logged per request
@@ -32,7 +32,7 @@ No third-party login — accounts are local to this app. AI provider is configur
 |---|---|
 | Backend | Python 3.12 · FastAPI · Jinja2 |
 | Database | Google Cloud Firestore |
-| AI | Ollama — `nomic-embed-text` (embeddings) · `llama3.2:3b` (generation) |
+| AI | Swappable via `AI_PROVIDER`: Ollama — `nomic-embed-text`/`llama3.2:3b` (local, default) · Groq — `openai/gpt-oss-20b` (hosted, used for the live deployment) · Hugging Face Inference Providers (hosted, paid) |
 | External APIs | Semantic Scholar · CrossRef |
 | PDF export | fpdf2 |
 
@@ -95,7 +95,7 @@ Open `http://localhost:8000` — sign up, create a project, and start researchin
 - **Projects, not one big pile.** Every saved resource and generated outline belongs to a project. Deleting a project cascades only within itself.
 - **No in-app text editor.** The app produces a read-only scaffold with Copy/Regenerate/Export. Writing the actual paper is the student's task.
 - **IEEE by default.** Structure and citations default to IEEE; APA/MLA/Chicago are available.
-- **Local-only.** No third-party identity provider, no external LLM API.
+- **No third-party identity provider, ever.** AI provider is swappable (`AI_PROVIDER=ollama|groq|huggingface`) — local by default, hosted free tier for the deployment above.
 
 ## Compliance
 

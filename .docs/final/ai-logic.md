@@ -18,7 +18,7 @@ AI provider is swappable: `app/clients/ollama.py` (local) or `app/clients/groq.p
 
 ## Prove (test set, baseline, eval)
 
-- **Test set**: `tests/test_services_search.py` (183 lines) — embedding/ranking/URL-resolution regression tests, 9/9 passing as of the last fix (search link resolution: DOI/arXiv prioritized over raw aggregator URLs).
+- **Test set**: `tests/test_services_search.py` (183 lines) — embedding/ranking/URL-resolution regression tests, 15/15 passing as of the last fix (search link resolution: DOI/arXiv prioritized over raw aggregator URLs).
 - **Test set**: `tests/test_routes_outline.py` — exercises the outline generation route including citation-marker handling.
 - **Test set**: `tests/test_services_claims.py` (104 lines) — evidence/claim-linking regression coverage.
 - **Baseline**: pre-fix, search results linked to Semantic Scholar's own landing page (not the paper) or stale/missing CrossRef URLs — documented in `plan/test-plan-20261027-210029/`.
@@ -29,4 +29,4 @@ AI provider is swappable: `app/clients/ollama.py` (local) or `app/clients/groq.p
 
 - **Reliability guardrail**: 100% of generated outline/summary text passes `_validate_citations()` before being shown — any output that fails is discarded with a retry path, never silently shown to the user with a broken reference (BL-19, BL-41).
 - **Latency**: structured logging records search/embedding/ranking/generation latency per request (see README "Engineering highlights") — no committed baseline numbers yet; capture during real-user test sessions (see Test Plan) rather than inventing a figure here.
-- **Failure mode**: if Ollama/Groq is unreachable, the UI surfaces a specific actionable error (BL-21) instead of a crash or silent hang — covered by `tests/test_routes_outline.py`.
+- **Failure mode**: if the configured AI provider is unreachable, the UI surfaces a specific actionable error (BL-21) instead of a crash or silent hang — `app/clients/ai.py:unavailable_message()` picks the Ollama-specific message ("run `ollama serve`") when running locally, or a generic "try again in a minute" message for hosted providers; covered by `tests/test_simple_ui.py::TestAskRoute::test_ai_down_gives_helpful_error` and `TestSettings::test_settings_shows_ai_status`.
