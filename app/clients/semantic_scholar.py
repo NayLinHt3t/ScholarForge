@@ -37,7 +37,7 @@ async def fetch_by_id(paper_id: str) -> dict | None:
 def extract_paper_id(url: str) -> str | None:
     """Extract the paper ID hash from a semanticscholar.org paper URL."""
     import re
-    m = re.search(r"semanticscholar\.org/paper/[^/]+/([a-f0-9]{40})", url)
+    m = re.search(r"semanticscholar\.org/(?:paper/[^/]+|reader)/([a-f0-9]{40})", url)
     if m:
         return m.group(1)
     # Also accept bare 40-char hex IDs
