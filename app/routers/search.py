@@ -85,7 +85,10 @@ async def add_by_url(
 
     try:
         raw = await ss_client.fetch_by_id(paper_id)
-    except Exception:
+    except Exception as e:
+        from httpx import HTTPStatusError
+        if isinstance(e, HTTPStatusError) and e.response.status_code == 429:
+            return RedirectResponse(url=f"{base}?url_error=busy", status_code=303)
         return RedirectResponse(url=f"{base}?url_error=fetch", status_code=303)
 
     if not raw:

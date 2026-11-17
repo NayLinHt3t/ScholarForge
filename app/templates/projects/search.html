@@ -92,6 +92,8 @@ a.paper-title:hover { color: var(--accent); }
       Could not find a Semantic Scholar paper ID in that URL. Paste the full paper URL, e.g. <code>https://www.semanticscholar.org/paper/…/&lt;40-char-id&gt;</code>
     {% elif request.query_params.get("url_error") == "notfound" %}
       Paper not found on Semantic Scholar.
+    {% elif request.query_params.get("url_error") == "busy" %}
+      Semantic Scholar is busy right now — try again in a minute.
     {% else %}
       Could not fetch the paper — check your connection and try again.
     {% endif %}
